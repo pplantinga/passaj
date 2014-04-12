@@ -17,7 +17,6 @@ public class HexBoard extends JPanel
   private int[] myWallCount;
   private String[] myNames;
   private String[] myPieceColors;
-  private String wallNumber;
   private int myWidth;
   private int myWallWidth;
   private int myRadius;
@@ -38,7 +37,6 @@ public class HexBoard extends JPanel
     this.myPlayers = 2;
     initialize();
 
-    this.wallNumber = "default";
     this.myWallCount = new int[2];
     this.myWallCount[0] = ((this.myBoardSize - 1) * (this.myBoardSize + 2 * this.myBoardSize - 3) / 16);
     this.myWallCount[1] = ((this.myBoardSize - 1) * (this.myBoardSize + 2 * this.myBoardSize - 3) / 16);
@@ -57,7 +55,6 @@ public class HexBoard extends JPanel
     this.myPieceColors = board.getColors();
     this.compPlay = (this.myNames[1] == "THE DOMINATOR");
     this.myCompLevel = board.getCompLevel();
-    this.wallNumber = board.getWallNumber();
 
     this.myWallCount = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
@@ -68,11 +65,10 @@ public class HexBoard extends JPanel
     this.myHexBoard = deepCopy(board.getBoard());
   }
 
-  public HexBoard(String[] names, String[] colors, String background, String wallNum, int size, int compLevel)
+  public HexBoard(String[] names, String[] colors, int size, int compLevel)
   {
     this.myBoardSize = size;
     this.myPlayers = names.length;
-    this.wallNumber = wallNum;
     initialize();
 
     if (this.myPlayers == 1) {
@@ -84,16 +80,10 @@ public class HexBoard extends JPanel
       while (stringToColor(piece2color).equals(stringToColor(colors[0])))
         piece2color = randomColor();
       this.myPieceColors = new String[] { colors[0], piece2color, "light gray" };
-      if (wallNum.equals("default"))
-        this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
-      else
-        this.myWallNumber = Integer.parseInt(wallNum);
+      this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
       this.myWallCount = new int[] { this.myWallNumber, this.myWallNumber };
     } else {
-      if (wallNum.equals("default"))
-        this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
-      else
-        this.myWallNumber = Integer.parseInt(wallNum);
+      this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
       this.myWallCount = new int[this.myPlayers];
       this.myNames = new String[this.myPlayers];
       this.myPieceColors = new String[this.myPlayers + 1];
@@ -128,7 +118,7 @@ public class HexBoard extends JPanel
       this.myHexBoard[((this.myBoardSize - 1) / 4 + 1)][((this.myBoardSize + 1) / 2)] = 6;
     }
 
-    setBackground(stringToColor(background));
+    setBackground(Color.gray);
   }
 
   private void initialize() {
@@ -897,10 +887,6 @@ public class HexBoard extends JPanel
   public int getWallCount(int player)
   {
     return this.myWallCount[(player - 1)];
-  }
-
-  public String getWallNumber() {
-    return this.wallNumber;
   }
 
   public String getName(int piece)

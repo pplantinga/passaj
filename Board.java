@@ -16,8 +16,9 @@ public class Board extends JPanel
   public static final String DEFAULT_TEMPPIECE_COLOR = "light grey";
   public static final String DEFAULT_NAME1 = "Peter Plantinga";
   public static final String DEFAULT_NAME2 = "THE DOMINATOR";
-  public static final Color DEFAULT_WALL_COLOR = stringToColor("dark brown"); public static final Color DEFAULT_BACKGROUND_COLOR = stringToColor("grey");
-  public static final Color DEFAULT_BLOCK_COLOR = stringToColor("black"); public static final Color DEFAULT_LASTROW_COLOR = stringToColor("dark grey");
+  public static final Color DEFAULT_WALL_COLOR = stringToColor("dark brown");
+  public static final Color DEFAULT_BLOCK_COLOR = stringToColor("black");
+	public static final Color DEFAULT_LASTROW_COLOR = stringToColor("dark grey");
   public static final Color DEFAULT_TEMPWALL_COLOR = stringToColor("brown");
   private int[][] myBoard;
   private int[][] testBoard;
@@ -35,7 +36,6 @@ public class Board extends JPanel
   private String[] myPieceColors;
   private Color myWallColor;
   private Color myTempWallColor;
-  private String wallNumber;
   private IllegalArgumentException wallException;
   private IllegalArgumentException wallFilled;
   private IllegalArgumentException blockException;
@@ -53,11 +53,10 @@ public class Board extends JPanel
     this.compPlay = true;
     this.myCompLevel = 1;
 
-    this.wallNumber = "default";
-    this.myWallNumber = ((int)Math.round(Math.pow(this.myBoardSize - 1, 2.0D) * 5.0D / 32.0D));
+    this.myWallNumber = numberOfWalls(9, 2);
     this.myWallCount = new int[] { this.myWallNumber, this.myWallNumber };
 
-    setBackground(DEFAULT_BACKGROUND_COLOR);
+    setBackground(Color.gray);
     initialize();
   }
 
@@ -68,20 +67,19 @@ public class Board extends JPanel
     this.myPlayers = board.getPlayers();
     this.compPlay = (this.myNames[1] == "THE DOMINATOR");
     this.myCompLevel = board.getCompLevel();
-    this.wallNumber = board.getWallNumber();
 
     this.myWallCount = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCount[i] = board.getWallCount(i + 1);
     }
 
-    setBackground(DEFAULT_BACKGROUND_COLOR);
+    setBackground(Color.gray);
     initialize();
     this.myBoard = deepCopy(board.getBoard());
     this.myTurn = board.getTurn();
   }
 
-  public Board(String[] names, String[] colors, String background, String wallNum, int size, int compLevel)
+  public Board(String[] names, String[] colors, int size, int compLevel)
   {
     this.myBoardSize = size;
     if (names.length == 1) {
@@ -106,16 +104,22 @@ public class Board extends JPanel
       this.compPlay = false;
     }
 
-    this.wallNumber = wallNum;
-    if (wallNum.equalsIgnoreCase("default"))
-      this.myWallNumber = ((int)Math.round(Math.pow(this.myBoardSize - 1, 2.0D) * 5.0D / 16.0D / this.myPlayers));
+   	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
     this.myWallCount = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCount[i] = this.myWallNumber;
     }
-    setBackground(stringToColor(background));
+    setBackground(Color.gray);
     initialize();
   }
+
+	/* This yeilds 10 for board size 9, as it should, as well as
+	 * reasonable numbers for the other sizes
+	 */
+	private int numberOfWalls(int boardSize, int players)
+	{
+		return (int)Math.round(Math.pow(boardSize - 1, 2.0) * 5.0/16.0/players);
+	}
 
   public void initialize()
   {
@@ -804,10 +808,6 @@ public class Board extends JPanel
   public int[] getWallCounts()
   {
     return this.myWallCount;
-  }
-
-  public String getWallNumber() {
-    return this.wallNumber;
   }
 
   public int getBoardSize()

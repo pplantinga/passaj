@@ -11,6 +11,9 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 
+/**
+ * This class operates a gui window for choosing game options.
+ */
 public class InputGUIDriver extends JFrame
   implements ActionListener
 {
@@ -19,140 +22,159 @@ public class InputGUIDriver extends JFrame
   private JButton theBigBlueButton;
   private JButton hexButton;
   private JButton regButton;
-  private JLabel backgroundlabel;
-  private JLabel wallNumberlabel;
   private JLabel sizelabel;
   private JLabel playerNumberlabel;
   private JLabel compLevellabel;
-  private JTextField backgroundfield;
-  private JTextField wallNumberfield;
   private JTextField sizefield;
-  private JRadioButton[] myPlay = new JRadioButton[5]; private JRadioButton[] myCompLevels = new JRadioButton[5];
+  private JRadioButton[] myPlay = new JRadioButton[5];
+	private JRadioButton[] myCompLevels = new JRadioButton[5];
   private JLabel[] playerColorLabels = new JLabel[12];
   private JTextField[] playerColorFields = new JTextField[12];
-  private String[] playerColors = { "Peter Plantinga", "Gold", "Red Guy", "Dark Red", "Blue Guy", "Light Blue", "Green Guy", 
-    "Light Green", "Orange Guy", "Orange", "Pink Guy", "Pink" };
+  private String[] playerColors = {
+		"Peter Plantinga", "Gold",
+		"Red Guy", "Dark Red",
+		"Blue Guy", "Light Blue",
+		"Green Guy", "Light Green",
+		"Orange Guy", "Orange",
+		"Pink Guy", "Pink"
+	};
 
-  private boolean myHex = false;
+  private String myType = "default";
   private JPanel playersPanel;
   private JPanel compPanel;
-  private int myPlayers = 1; private int myCompLevel = 1;
+  private int myPlayers = 1;
+	private int myCompLevel = 1;
 
+	/**
+	 * Default constructor.
+	 */
   public InputGUIDriver()
   {
     initialize();
-    this.backgroundfield.setText("Gray");
-    this.wallNumberfield.setText("default");
     this.sizefield.setText("9");
   }
 
-  public InputGUIDriver(String[] names, String[] colors, String boardType, int size, int compLevel, String wallNum)
+	/**
+	 * Constructor with options, for when you want to change the defaults.
+	 *
+	 * Params:
+	 * 	names = The names of the players
+	 * 	colors = The colors of the players
+	 * 	boardType = "Hexagonal" or "Default"
+	 * 	size = board size, default 9
+	 * 	compLevel = How difficult the computer is
+	 */
+  public InputGUIDriver(String[] names, String[] colors, String boardType, int size, int compLevel)
   {
     initialize();
-    if (names[1].equals("THE DOMINATOR")) {
-      this.myPlayers = 1;
-      if (compLevel != 1) {
-        this.myCompLevels[0].setSelected(false);
-        this.myCompLevels[(compLevel - 1)].setSelected(true);
-        this.myCompLevel = compLevel;
-      }
-    } else {
-      this.myPlayers = names.length;
-      if (this.myPlayers != 6) {
-        this.myPlay[(this.myPlayers - 1)].setSelected(true);
-        this.myPlay[0].setSelected(false);
-      }
-      for (int i = 0; i < 5; i++) {
-        this.myCompLevels[i].setEnabled(false);
-      }
-      this.compLevellabel.setForeground(Color.gray);
-    }
-    if (boardType.equals("hexagonal")) {
+		this.myPlayers = names.length;
+		if (this.myPlayers != 6)
+		{
+			this.myPlay[(this.myPlayers - 1)].setSelected(true);
+			this.myPlay[0].setSelected(false);
+		}
+
+		for (int i = 0; i < 5; i++)
+			this.myCompLevels[i].setEnabled(false);
+
+		this.compLevellabel.setForeground(Color.gray);
+
+    if (boardType.equals("hexagonal"))
+		{
       this.regButton.setSelected(false);
       this.regButton.addActionListener(this);
       this.hexButton.setSelected(true);
       this.hexButton.removeActionListener(this);
-      this.myHex = true;
+      this.myType = "hexagonal";
     }
-    this.backgroundfield.setText("Gray");
-    this.wallNumberfield.setText(wallNum);
+
     this.sizefield.setText(Integer.toString(size));
-    for (int i = 0; i < 12; i += 2)
-      if (i < this.myPlayers * 2) {
-        this.playerColorFields[i].setText(names[(i / 2)]);
-        this.playerColorFields[i].setEditable(true);
-        this.playerColorFields[i].setFocusable(true);
-        this.playerColorLabels[i].setForeground(Color.black);
-        this.playerColorFields[(i + 1)].setText(colors[(i / 2)]);
-        this.playerColorFields[(i + 1)].setEditable(true);
-        this.playerColorFields[(i + 1)].setFocusable(true);
-        this.playerColorLabels[(i + 1)].setForeground(Color.black);
-      } else {
-        this.playerColorFields[i].setEditable(false);
-        this.playerColorFields[i].setFocusable(false);
-        this.playerColorFields[i].setText("");
-        this.playerColorLabels[i].setForeground(Color.gray);
-        this.playerColorFields[(i + 1)].setEditable(false);
-        this.playerColorFields[(i + 1)].setFocusable(false);
-        this.playerColorFields[(i + 1)].setText("");
-        this.playerColorLabels[(i + 1)].setForeground(Color.gray);
-      }
+
+		// Enable as many fields as there are players
+    for (int i = 0; i < 12; i++)
+		{
+			String text = names[i/2];
+			if (i % 2 == 1)
+				text = colors[i/2];
+      if (i < this.myPlayers * 2)
+				toggleField(i, true, text);
+			else
+				toggleField(i, false, "");
+		}
   }
 
+	/**
+	 * This function is run for every constructor.
+	 */
   public void initialize()
   {
     setTitle("Opening Screen");
+
+		// Player labels
     this.playerNumberlabel = new JLabel("Number of players: ");
-    for (int i = 1; i <= 12; i += 2) {
-      this.playerColorLabels[(i - 1)] = new JLabel("Enter Player " + (i + 1) / 2 + " name: ");
-      this.playerColorLabels[i] = new JLabel("Enter Player " + (i + 1) / 2 + " color: ");
+    for (int i = 0; i < 12; i++)
+		{
+			int player = i / 2 + 1;
+			String label = "Enter Player " + player + " name:";
+			if (i % 2 == 1)
+				label = "Enter Player " + player + " color:";
+
+      this.playerColorLabels[i] = new JLabel(label);
     }
+
     this.playersPanel = new JPanel();
     this.playersPanel.setLayout(new GridLayout(1, 5));
     for (int i = 0; i <= 4; i++)
     {
-      int j;
+			// Set labels for number of players. Neither hex boards nor
+			// default boards can have 5 players, but hex can have 6 players
+      int j = i + 1;
       if (i == 4)
         j = 6;
-      else
-        j = i + 1;
+
       this.myPlay[i] = new JRadioButton(Integer.toString(j));
       this.myPlay[i].setFocusable(false);
       this.myPlay[i].setActionCommand(new Integer(i).toString());
       this.myPlay[i].addActionListener(this);
       this.playersPanel.add(this.myPlay[i]);
+
+			// Select 1 player by default
       if (i == 0)
         this.myPlay[i].setSelected(true);
     }
+
+		// Computer level chooser
     this.compLevellabel = new JLabel("Enter the level of the computer");
     this.compPanel = new JPanel();
     this.compPanel.setLayout(new GridLayout(1, 5));
-    for (int i = 0; i <= 4; i++) {
+    for (int i = 0; i <= 4; i++)
+		{
       this.myCompLevels[i] = new JRadioButton(Integer.toString(i + 1));
       this.myCompLevels[i].setActionCommand("comp" + i);
       this.myCompLevels[i].setFocusable(false);
       this.myCompLevels[i].addActionListener(this);
       this.compPanel.add(this.myCompLevels[i]);
+
+			// Select level 1 by default
       if (i == 0)
         this.myCompLevels[i].setSelected(true);
     }
-    this.backgroundlabel = new JLabel("Enter Background color: ");
-    this.wallNumberlabel = new JLabel("Enter Number of Walls: ");
-    this.sizelabel = new JLabel("Enter Size of Board: ");
-    for (int i = 1; i <= 12; i += 2) {
-      this.playerColorFields[(i - 1)] = new JTextField();
+
+		// Initialize text fields
+    for (int i = 0; i < 12; i++)
+		{
       this.playerColorFields[i] = new JTextField();
-      if (i >= 3) {
-        this.playerColorFields[(i - 1)].setEditable(false);
-        this.playerColorFields[i].setEditable(false);
-        this.playerColorFields[(i - 1)].setFocusable(false);
-        this.playerColorFields[i].setFocusable(false);
-        this.playerColorLabels[(i - 1)].setForeground(Color.gray);
-        this.playerColorLabels[i].setForeground(Color.gray);
-      }
+      if (i >= 2)
+				toggleField(i, false, "");
     }
     this.playerColorFields[0].setText(this.playerColors[0]);
     this.playerColorFields[1].setText(this.playerColors[1]);
+
+    this.sizelabel = new JLabel("Enter Size of Board: ");
+    this.sizefield = new JTextField(2);
+    this.sizefield.addActionListener(this);
+
+		// Initialize buttons
     this.regButton = new JButton("Regular Board");
     this.regButton.setActionCommand("boardType");
     this.regButton.setFocusable(false);
@@ -161,10 +183,6 @@ public class InputGUIDriver extends JFrame
     this.hexButton.addActionListener(this);
     this.hexButton.setActionCommand("boardType");
     this.hexButton.setFocusable(false);
-    this.backgroundfield = new JTextField(8);
-    this.wallNumberfield = new JTextField(2);
-    this.sizefield = new JTextField(2);
-    this.sizefield.addActionListener(this);
     this.theBigRedButton = new JButton("Quit");
     this.theBigRedButton.addActionListener(this);
     this.theBigRedButton.setActionCommand("quit");
@@ -173,142 +191,187 @@ public class InputGUIDriver extends JFrame
     this.theBigBlueButton.addActionListener(this);
     this.theBigBlueButton.setActionCommand("new");
     this.theBigBlueButton.setFocusable(false);
-    setLayout(new GridLayout(19, 2));
+
+		// Layout all the parts
+    setLayout(new GridLayout(17, 2));
     add(this.regButton);
     add(this.hexButton);
     add(this.playerNumberlabel);
     add(this.playersPanel);
     add(this.compLevellabel);
     add(this.compPanel);
-    for (int i = 0; i < 12; i++) {
+    for (int i = 0; i < 12; i++)
+		{
       add(this.playerColorLabels[i]);
       add(this.playerColorFields[i]);
     }
-    add(this.backgroundlabel);
-    add(this.backgroundfield);
     add(this.sizelabel);
     add(this.sizefield);
-    add(this.wallNumberlabel);
-    add(this.wallNumberfield);
     add(this.theBigRedButton);
     add(this.theBigBlueButton);
     setDefaultCloseOperation(3);
   }
 
-  public void actionPerformed(ActionEvent arg0) {
-    if (arg0.getActionCommand().equalsIgnoreCase("Quit")) {
+	/**
+	 * Handle all actions in one function.
+	 */
+  public void actionPerformed(ActionEvent arg0)
+	{
+		String cmd = arg0.getActionCommand();
+
+		// They clicked the "quit" button
+    if (cmd.equalsIgnoreCase("quit"))
       System.exit(128);
-    }
-    if ((arg0.getActionCommand().equals("0")) || (arg0.getActionCommand().equals("1")) || (arg0.getActionCommand().equals("2")) || 
-      (arg0.getActionCommand().equals("3")) || (arg0.getActionCommand().equals("4"))) {
+
+		// They changed the number of players
+    if (cmd.equals("0")
+				|| cmd.equals("1")
+				|| cmd.equals("2")
+				|| cmd.equals("3")
+				|| cmd.equals("4"))
+		{
       if (this.myPlayers != 6)
         this.myPlay[(this.myPlayers - 1)].setSelected(false);
       else
         this.myPlay[4].setSelected(false);
-      this.myPlay[Integer.parseInt(arg0.getActionCommand())].setFocusable(false);
-      this.myPlay[Integer.parseInt(arg0.getActionCommand())].setSelected(true);
-      if (Integer.parseInt(arg0.getActionCommand()) == 4)
+
+			int players = Integer.parseInt(cmd);
+      this.myPlay[players].setFocusable(false);
+      this.myPlay[players].setSelected(true);
+
+			this.myPlayers = players + 1;
+      if (players == 4)
         this.myPlayers = 6;
-      else {
-        this.myPlayers = (Integer.parseInt(arg0.getActionCommand()) + 1);
-      }
-      if ((this.myPlayers == 3) || (this.myPlayers == 6)) {
+
+			// 3 and 6 players can only exist on hex boards
+      if (this.myPlayers == 3 || this.myPlayers == 6)
+			{
         this.regButton.setSelected(false);
         this.regButton.setEnabled(false);
         this.hexButton.setSelected(true);
         this.hexButton.removeActionListener(this);
-        this.myHex = true;
-      } else if (!this.regButton.isEnabled()) {
+        this.myType = "hexagonal";
+      }
+			else if (!this.regButton.isEnabled())
+			{
         this.regButton.setEnabled(true);
         this.regButton.removeActionListener(this);
         this.regButton.addActionListener(this);
       }
 
-      for (int i = 0; i <= 4; i++) {
-        if (this.myPlayers == 1) {
-          this.compLevellabel.setForeground(Color.black);
-          this.myCompLevels[i].setEnabled(true);
-        } else {
-          this.compLevellabel.setForeground(Color.gray);
-          this.myCompLevels[i].setEnabled(false);
-        }
-      }
+			// Enable the computer if there's only one player
+			boolean compEnabled = this.myPlayers == 1;
+			if (compEnabled)
+				this.compLevellabel.setForeground(Color.black);
+			else
+				this.compLevellabel.setForeground(Color.gray);
 
-      for (int i = 2; i < 12; i++) {
+      for (int i = 0; i < 5; i++)
+        this.myCompLevels[i].setEnabled(compEnabled);
+
+			// Update number of enabled fields accordingly
+      for (int i = 2; i < 12; i++)
+			{
         if (!this.playerColorFields[i].getText().equals(""))
           this.playerColors[i] = this.playerColorFields[i].getText();
-        if (i < this.myPlayers * 2) {
-          this.playerColorFields[i].setText(this.playerColors[i]);
-          this.playerColorFields[i].setEditable(true);
-          this.playerColorFields[i].setFocusable(true);
-          this.playerColorLabels[i].setForeground(Color.black);
-        } else {
-          this.playerColorFields[i].setEditable(false);
-          this.playerColorFields[i].setText("");
-          this.playerColorFields[i].setFocusable(false);
-          this.playerColorLabels[i].setForeground(Color.gray);
-        }
+        if (i < this.myPlayers * 2)
+					toggleField(i, true, this.playerColors[i]);
+				else
+					toggleField(i, false, "");
       }
     }
 
-    if ((arg0.getActionCommand().equals("comp0")) || (arg0.getActionCommand().equals("comp1")) || 
-      (arg0.getActionCommand().equals("comp2")) || (arg0.getActionCommand().equals("comp3")) || (arg0.getActionCommand().equals("comp4"))) {
+		// User changed the difficulty of the computer
+    if (cmd.equals("comp0")
+				|| cmd.equals("comp1")
+				|| cmd.equals("comp2")
+				|| cmd.equals("comp3")
+				|| cmd.equals("comp4"))
+		{
       this.myCompLevels[(this.myCompLevel - 1)].setSelected(false);
-      this.myCompLevel = (arg0.getActionCommand().charAt(4) - '/');
+      this.myCompLevel = (cmd.charAt(4) - '/');
       this.myCompLevels[(this.myCompLevel - 1)].setSelected(true);
     }
 
-    if (arg0.getActionCommand().equals("boardType")) {
-      if (this.myHex) {
+		// User selected "Hexagonal" or "Default" board type
+    if (cmd.equals("boardType"))
+		{
+      if (this.myType == "hexagonal")
+			{
         this.regButton.setSelected(true);
         this.regButton.removeActionListener(this);
         this.hexButton.setSelected(false);
         this.hexButton.addActionListener(this);
-        this.myHex = false;
-      } else {
+        this.myType = "default";
+      }
+			else
+			{
         this.regButton.setSelected(false);
         this.regButton.addActionListener(this);
         this.hexButton.setSelected(true);
         this.hexButton.removeActionListener(this);
-        this.myHex = true;
+        this.myType = "hexagonal";
       }
     }
 
-    if (arg0.getActionCommand().equalsIgnoreCase("New")) {
-      for (int i = 0; i < 12; i++) {
+		// User started the game!
+    if (cmd.equalsIgnoreCase("new"))
+		{
+			// If there's nothing in a field, use the default
+      for (int i = 0; i < 12; i++)
+			{
         if (this.playerColorFields[i].getText().equals(""))
           this.playerColorFields[i].setText(this.playerColors[i]);
       }
-      if (this.backgroundfield.getText().equals(""))
-        this.backgroundfield.setText("gray");
-      if (this.wallNumberfield.getText().equals(""))
-        this.wallNumberfield.setText("default");
-      if (this.sizefield.getText().equals("")) {
+
+      if (this.sizefield.getText().equals(""))
         this.sizefield.setText("9");
-      }
+
       String[] names = new String[this.myPlayers];
       String[] colors = new String[this.myPlayers];
-      for (int i = 0; i < 2 * this.myPlayers; i += 2) {
+      for (int i = 0; i < 2 * this.myPlayers; i += 2)
+			{
         names[(i / 2)] = this.playerColorFields[i].getText();
         colors[(i / 2)] = this.playerColorFields[(i + 1)].getText();
       }
 
-      if (this.myHex) {
-        QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.backgroundfield.getText(), 
-          this.wallNumberfield.getText(), Integer.parseInt(this.sizefield.getText()) - Integer.parseInt(this.sizefield.getText()) % 4 + 1, this.myCompLevel);
-        pass.pack();
-        pass.setVisible(true);
-        setVisible(false);
-      } else {
-        QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.backgroundfield.getText(), 
-          Integer.parseInt(this.sizefield.getText()), this.wallNumberfield.getText(), this.myCompLevel);
-        pass.pack();
-        pass.setVisible(true);
-        setVisible(false);
-      }
+			// Parse size of board
+			int size = Integer.parseInt(this.sizefield.getText());
+			if (this.myType == "hexagonal")
+				size = size % 4 + 1;
+
+			// Initialize the game
+      QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, size, this.myCompLevel, this.myType);
+			pass.pack();
+			pass.setVisible(true);
+
+			// Hide the input GUI
+			setVisible(false);
     }
   }
 
+	/**
+	 * Turn on/off the text fields for name/color.
+	 *
+	 * Params:
+	 *   field = which field to turn on/off
+	 *   enable = on/off switch
+	 *   text = text to put in the field
+	 */
+	private void toggleField(int field, boolean enable, String text)
+	{
+		this.playerColorFields[field].setText(text);
+		this.playerColorFields[field].setEditable(enable);
+		this.playerColorFields[field].setFocusable(enable);
+		if (enable)
+			this.playerColorLabels[field].setForeground(Color.black);
+		else
+			this.playerColorLabels[field].setForeground(Color.gray);
+	}
+
+	/**
+	 * Start it all.
+	 */
   public static void main(String[] args)
   {
     InputGUIDriver input = new InputGUIDriver();

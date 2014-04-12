@@ -45,17 +45,18 @@ public class QuoridorGUIDriver extends JFrame
     initialize();
   }
 
-  public QuoridorGUIDriver(String[] names, String[] colors, String background, int size, String wallNum, int compLevel)
+  public QuoridorGUIDriver(String[] names, String[] colors, int size, int compLevel, String type)
   {
-    this.myBoard = new Board(names, colors, background, wallNum, size, compLevel);
-    this.myHex = false;
-    initialize();
-  }
-
-  public QuoridorGUIDriver(String[] names, String[] colors, String background, String wallNum, int size, int compLevel)
-  {
-    this.myHexBoard = new HexBoard(names, colors, background, wallNum, size, compLevel);
-    this.myHex = true;
+		if (type == "Hexagonal")
+		{
+			this.myHexBoard = new HexBoard(names, colors, size, compLevel);
+			this.myHex = true;
+		}
+		else
+		{
+			this.myBoard = new Board(names, colors, size, compLevel);
+			this.myHex = false;
+		}
     initialize();
   }
 
@@ -118,12 +119,12 @@ public class QuoridorGUIDriver extends JFrame
   public void actionPerformed(ActionEvent e) {
     if (e.getActionCommand().equals("new game")) {
       if (this.myHex) {
-        InputGUIDriver input = new InputGUIDriver(this.myHexBoard.getNames(), this.myHexBoard.getColors(), "hexagonal", this.myHexBoard.getBoardSize(), this.myHexBoard.getCompLevel(), this.myHexBoard.getWallNumber());
+        InputGUIDriver input = new InputGUIDriver(this.myHexBoard.getNames(), this.myHexBoard.getColors(), "hexagonal", this.myHexBoard.getBoardSize(), this.myHexBoard.getCompLevel());
         input.pack();
         input.setVisible(true);
         setVisible(false);
       } else {
-        InputGUIDriver input = new InputGUIDriver(this.myBoard.getNames(), this.myBoard.getColors(), "default", this.myBoard.getBoardSize(), this.myBoard.getCompLevel(), this.myBoard.getWallNumber());
+        InputGUIDriver input = new InputGUIDriver(this.myBoard.getNames(), this.myBoard.getColors(), "default", this.myBoard.getBoardSize(), this.myBoard.getCompLevel());
         input.pack();
         input.setVisible(true);
         setVisible(false);
