@@ -100,7 +100,7 @@ public class Board
     }
   }
 
-	public int move(int x, int y, boolean Xhalf, boolean Yhalf)
+	public void move(int x, int y, boolean Xhalf, boolean Yhalf)
 	{
 		if (isHorizontal(x, y))
 			addWall(6, x, y, Xhalf);

@@ -1,4 +1,4 @@
-package pasasj;
+package passaj;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -10,8 +10,8 @@ public class BoardPanel extends JPanel
   public static final int DEFAULT_BOARD_WIDTH = 700;
   public static final int DEFAULT_WALL_WIDTH = 15;
   public static final int DEFAULT_BOARD_SIZE = 9;
-	public static final Color myWallColor = Color.decode("#402000");
-	public static final Color myTempWallColor = Color.decode("#876543");
+	public static final Color WallColor = Color.decode("#402000");
+	public static final Color TempWallColor = Color.decode("#876543");
   private int myWidth;
 	private int myRadius;
   private int myWallWidth;
@@ -21,9 +21,7 @@ public class BoardPanel extends JPanel
 	private int myPlayerCount;
 	private String myBoardType;
 	private Color[] myColors;
-	private int[] xs;
-	private int[] ys;
-	private int[][] walls;
+	private int[][] myBoard;
 
 	public BoardPanel()
 	{
@@ -33,14 +31,16 @@ public class BoardPanel extends JPanel
 		initialize();
 	}
 
-	public BoardPanel(String[] colors, String boardType, int boardSize)
+	public BoardPanel(String[] colors, String boardType, int boardSize, int[][] board)
 	{
 		this.myPlayerCount = colors.length;
+		this.myColors = new Color[colors.length];
 		for (int i = 0; i < colors.length; i++)
 			this.myColors[i] = Color.decode(colors[i]);
 
 		this.myBoardType = boardType;
 		this.myBoardSize = boardSize;
+		this.myBoard = board;
 
 		initialize();
 	}
@@ -108,14 +108,14 @@ public class BoardPanel extends JPanel
   {
     for (int piece = 0; piece < this.myPlayerCount; piece++)
 		{
-			int x = convertToPix(this.xs[piece]);
-			int y = convertToPix(this.ys[piece]);
+			int x = convertToPix(getColumn(piece));
+			int y = convertToPix(getRow(piece));
 			int width = this.myPieceDiameter;
 
 			// Add a white border by painting a slightly bigger piece
 			// just underneath the piece.
 			pen.setColor(Color.white);
-			pen.fillOval(x, y, width + 2, width + 2);
+			pen.fillOval(x - 1, y - 1, width + 2, width + 2);
 			pen.setColor(this.myColors[piece]);
 			pen.fillOval(x, y, width, width);
 		}
@@ -136,9 +136,9 @@ public class BoardPanel extends JPanel
       for (int j = 1; j <= 2 * this.myBoardSize - 1; j++)
         if ((this.myBoard[i][j] == 6) || (this.myBoard[i][j] == 7) || (this.myBoard[i][j] == 8)) {
           if (this.myBoard[i][j] == 6)
-            pen.setColor(this.myWallColor);
+            pen.setColor(BoardPanel.WallColor);
           if (this.myBoard[i][j] == 7)
-            pen.setColor(this.myTempWallColor);
+            pen.setColor(BoardPanel.TempWallColor);
           if (this.myBoard[i][j] == 8)
             pen.setColor(Color.red);
           if ((isEven(i)) && (!isEven(j)))
@@ -193,13 +193,13 @@ public class BoardPanel extends JPanel
 	{
 		int width = (this.myRadius - this.myWallWidth) * 2;
     for (int piece = 0; piece < this.myPlayerCount; piece++) {
-			int x = convertToHexPix(this.xs[piece]);
-			int y = convertToHexPix(this.ys[piece] + 1);
+			int x = convertToHexPix(getColumn(piece));
+			int y = convertToHexPix(getRow(piece) + 1);
 
 			// For a white border, just draw the same thing
 			// slightly bigger and underneath the other.
       pen.setColor(Color.white);
-			pen.fillOval(x, y, width + 2,	width + 2);
+			pen.fillOval(x - 1, y - 1, width + 2,	width + 2);
 			pen.setColor(this.myColors[piece]);
 			pen.fillOval(x, y, width,	width);
     }
@@ -217,12 +217,12 @@ public class BoardPanel extends JPanel
     int[] ypos = new int[6];
     for (int i = 0; i <= 2 * this.myBoardSize; i++) {
       for (int j = 0; j <= 2 * this.myBoardSize; j += 2) {
-        if ((this.myHexBoard[i][j] == 8) || (this.myHexBoard[i][j] == 9) || (this.myHexBoard[i][j] == 10)) {
-          if (this.myHexBoard[i][j] == 8)
-            pen.setColor(this.myWallColor);
-          if (this.myHexBoard[i][j] == 9)
-            pen.setColor(this.myTempWallColor);
-          if (this.myHexBoard[i][j] == 10)
+        if ((this.myBoard[i][j] == 8) || (this.myBoard[i][j] == 9) || (this.myBoard[i][j] == 10)) {
+          if (this.myBoard[i][j] == 8)
+            pen.setColor(BoardPanel.WallColor);
+          if (this.myBoard[i][j] == 9)
+            pen.setColor(BoardPanel.TempWallColor);
+          if (this.myBoard[i][j] == 10)
             pen.setColor(Color.red);
           if (((isEven(i)) && (!isEven(j / 2))) || ((!isEven(i)) && (isEven(j / 2)))) {
             xpos[0] = (this.myWidth * i / (2 * this.myBoardSize));
@@ -359,5 +359,32 @@ public class BoardPanel extends JPanel
 	{
 		return number % 2 == 0;
 	}
+
+	public void setBoard(int[][] board)
+	{
+		this.myBoard = board;
+	}
+
+  public int getRow(int piece)
+  {
+    for (int i = 1; i <= 2 * this.myBoardSize; i++) {
+      for (int j = 1; j <= 2 * this.myBoardSize; j++) {
+        if (this.myBoard[i][j] == piece + 1)
+          return j;
+      }
+    }
+    throw new IllegalArgumentException("piece " + piece + " doesn't exist");
+  }
+
+  public int getColumn(int piece)
+  {
+    for (int i = 1; i <= 2 * this.myBoardSize; i++) {
+      for (int j = 1; j <= 2 * this.myBoardSize; j++) {
+        if (this.myBoard[i][j] == piece + 1)
+          return i;
+      }
+    }
+    throw new IllegalArgumentException("piece " + piece + " doesn't exist");
+  }
 }
 

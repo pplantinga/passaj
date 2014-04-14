@@ -119,9 +119,6 @@ public class HexBoard
       this.myHexBoard[i][j] = 0;
       this.myHexBoard[x][y] = piece;
       this.myTurn += 1;
-      if (gameOver(piece, x, y)) {
-        throw new IllegalArgumentException(this.myNames[(piece - 1)] + " WINS!!");
-      }
     }
 
     for (int c = 1; c <= this.myPlayers; c++) {
@@ -661,11 +658,6 @@ public class HexBoard
   public int getWallCount(int player)
   {
     return this.myWallCount[(player - 1)];
-  }
-
-  public String getName(int piece)
-  {
-    return this.myNames[(piece - 1)];
   }
 
   public int getBoardSize()

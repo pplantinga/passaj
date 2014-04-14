@@ -31,12 +31,12 @@ public class InputGUIDriver extends JFrame
   private JLabel[] playerColorLabels = new JLabel[12];
   private JTextField[] playerColorFields = new JTextField[12];
   private String[] playerColors = {
-		"Peter Plantinga", "Gold",
-		"Red Guy", "Dark Red",
-		"Blue Guy", "Light Blue",
-		"Green Guy", "Light Green",
-		"Orange Guy", "Orange",
-		"Pink Guy", "Pink"
+		"Peter Plantinga", "#FFD700",
+		"Red Guy", "#8B0000",
+		"Blue Guy", "#63D1F4",
+		"Green Guy", "#BCED91",
+		"Orange Guy", "#FF8247",
+		"Pink Guy", "#CD5C5C"
 	};
 
   private String myType = "default";
@@ -44,6 +44,7 @@ public class InputGUIDriver extends JFrame
   private JPanel compPanel;
   private int myPlayers = 1;
 	private int myCompLevel = 1;
+	private boolean compEnabled = true;
 
 	/**
 	 * Default constructor.
@@ -260,14 +261,14 @@ public class InputGUIDriver extends JFrame
       }
 
 			// Enable the computer if there's only one player
-			boolean compEnabled = this.myPlayers == 1;
+			this.compEnabled = this.myPlayers == 1;
 			if (compEnabled)
 				this.compLevellabel.setForeground(Color.black);
 			else
 				this.compLevellabel.setForeground(Color.gray);
 
       for (int i = 0; i < 5; i++)
-        this.myCompLevels[i].setEnabled(compEnabled);
+        this.myCompLevels[i].setEnabled(this.compEnabled);
 
 			// Update number of enabled fields accordingly
       for (int i = 2; i < 12; i++)
@@ -327,6 +328,10 @@ public class InputGUIDriver extends JFrame
       if (this.sizefield.getText().equals(""))
         this.sizefield.setText("9");
 
+			// If we're playing against the computer, give it a color and name
+			if (this.myPlayers == 1)
+				this.myPlayers = 2;
+
       String[] names = new String[this.myPlayers];
       String[] colors = new String[this.myPlayers];
       for (int i = 0; i < 2 * this.myPlayers; i += 2)
@@ -340,8 +345,12 @@ public class InputGUIDriver extends JFrame
 			if (this.myType == "hexagonal")
 				size = size % 4 + 1;
 
+			// Use 0 for complevel if we're not using a computer
+			if (!this.compEnabled)
+				this.myCompLevel = 0;
+
 			// Initialize the game
-      QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, size, this.myCompLevel, this.myType);
+      QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.myType, size, this.myCompLevel);
 			pass.pack();
 			pass.setVisible(true);
 

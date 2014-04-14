@@ -27,6 +27,7 @@ public class QuoridorGUIDriver extends JFrame
 	private BoardPanel myBoardPanel;
   private String myType;
 	private String[] myNames;
+	private String[] myColors;
 	private int playerCount;
 	private int boardSize;
 	private int compLevel;
@@ -42,16 +43,25 @@ public class QuoridorGUIDriver extends JFrame
   public QuoridorGUIDriver(String[] names, String[] colors, String type, int size, int compLevel)
 	{
 		this.myNames = names;
+		this.myColors = colors;
 		this.playerCount = names.length;
 		this.boardSize = size;
 		this.compLevel = compLevel;
 		this.myType = type;
-		this.myBoardPanel = new BoardPanel(colors, size, type);
+		int[][] board;
 
 		if (type == "hexagonal")
+		{
 			this.myHexBoard = new HexBoard(this.playerCount, size, compLevel);
+			board = this.myHexBoard.getBoard();
+		}
 		else
+		{
 			this.myBoard = new Board(this.playerCount, size, compLevel);
+			board = this.myBoard.getBoard();
+		}
+		
+		this.myBoardPanel = new BoardPanel(colors, type, size, board);
 
     initialize();
   }
@@ -64,16 +74,8 @@ public class QuoridorGUIDriver extends JFrame
     setTitle("Welcome to Passaj!");
 
 		// Add action listeners
-    if (this.myType == "hexagonal")
-    {
-      this.myHexBoard.addMouseListener(this);
-      this.myHexBoard.addMouseMotionListener(this);
-    }
-    else
-    {
-      this.myBoard.addMouseListener(this);
-      this.myBoard.addMouseMotionListener(this);
-    }
+		this.myBoardPanel.addMouseListener(this);
+		this.myBoardPanel.addMouseMotionListener(this);
 
 		// Initialize UI elements
     this.myField = new JTextField();
@@ -97,10 +99,7 @@ public class QuoridorGUIDriver extends JFrame
     this.myPanel.add(this.quitButton, "Center");
     this.myPanel.add(this.myButton, "West");
     setLayout(new BorderLayout());
-    if (this.myType == "hexagonal")
-      add(this.myHexBoard, "North");
-    else
-      add(this.myBoard, "North");
+		add(this.myBoardPanel, "North");
     add(this.myPanel, "South");
     add(this.myField, "Center");
     setDefaultCloseOperation(3);
@@ -109,7 +108,7 @@ public class QuoridorGUIDriver extends JFrame
     String openText = "Welcome to the match-up between ";
 		for (int i = 0; i < this.playerCount - 1; i++)
 			openText += this.myNames[i] + " and ";
-		openText += this.myNames[this.playerCount] + ".";
+		openText += this.myNames[this.playerCount - 1] + ".";
     this.myField.setText(openText);
   }
 
@@ -129,7 +128,7 @@ public class QuoridorGUIDriver extends JFrame
     // Player clicked on "new game" button
 		if (e.getActionCommand().equals("new game"))
     {
-      InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.type, this.boardSize, this.compLevel);
+      InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.myType, this.boardSize, this.compLevel);
 			input.pack();
 			input.setVisible(true);
 			setVisible(false);
@@ -162,7 +161,9 @@ public class QuoridorGUIDriver extends JFrame
 				int x = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "x");
 				int y = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "y");
 				this.myHexBoard.move(x, y);
-				this.myBoardPanel.move(x, y);
+				int[][] board = this.myHexBoard.getBoard();
+				this.myBoardPanel.setBoard(board);
+				this.myBoardPanel.repaint();
 				
 				if (compLevel != 0)
 					this.myHexBoard.moveComp(2);
@@ -195,6 +196,9 @@ public class QuoridorGUIDriver extends JFrame
 				boolean xhalf = this.myBoardPanel.isTopLeftHalf(e.getX());
 				boolean yhalf = this.myBoardPanel.isTopLeftHalf(e.getY());
 				this.myBoard.move(x, y, xhalf, yhalf);
+
+				int[][] board = this.myBoard.getBoard();
+				this.myBoardPanel.setBoard(board);
         this.myBoardPanel.repaint();
 
         if (this.compLevel != 0)
