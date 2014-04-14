@@ -1,35 +1,21 @@
 package passaj;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.util.ArrayList;
-import javax.swing.JPanel;
 
-public class HexBoard extends JPanel
+public class HexBoard
 {
-  private static final long serialVersionUID = 1234567890987654321L;
-  public static final int DEFAULT_WIDTH = 700;
-  public static final int DEFAULT_WALL_WIDTH = 15;
-  public static final int DEFAULT_BOARD_SIZE = 9;
   private int[][] myHexBoard;
   private int[][] testBoard;
   private int[] myWallCount;
-  private String[] myNames;
-  private String[] myPieceColors;
-  private int myWidth;
-  private int myWallWidth;
   private int myRadius;
   private int myTurn;
   private int myPlayers;
   private int myBoardSize;
   private int myWallNumber;
-  private int myCompLevel = 1;
-  private Color myWallColor = stringToColor("dark brown"); private Color myTempWallColor = stringToColor("brown");
+  private int myCompLevel = 0;
   private IllegalArgumentException wallException;
   private IllegalArgumentException wallFilled;
   private IllegalArgumentException blockException;
-  private boolean compPlay = false;
 
   public HexBoard()
   {
@@ -43,17 +29,12 @@ public class HexBoard extends JPanel
 
     this.myHexBoard[this.myBoardSize][1] = 1;
     this.myHexBoard[this.myBoardSize][(2 * this.myBoardSize - 1)] = 2;
-
-    setBackground(Color.gray);
   }
 
   public HexBoard(HexBoard board) {
     this.myBoardSize = board.getBoardSize();
     this.myPlayers = board.getPlayers();
     initialize();
-    this.myNames = board.getNames();
-    this.myPieceColors = board.getColors();
-    this.compPlay = (this.myNames[1] == "THE DOMINATOR");
     this.myCompLevel = board.getCompLevel();
 
     this.myWallCount = new int[this.myPlayers];
@@ -65,34 +46,23 @@ public class HexBoard extends JPanel
     this.myHexBoard = deepCopy(board.getBoard());
   }
 
-  public HexBoard(String[] names, String[] colors, int size, int compLevel)
+  public HexBoard(int players, int size, int compLevel)
   {
     this.myBoardSize = size;
-    this.myPlayers = names.length;
+    this.myPlayers = players;
     initialize();
 
     if (this.myPlayers == 1) {
-      this.compPlay = true;
       this.myCompLevel = compLevel;
       this.myPlayers = 2;
-      this.myNames = new String[] { names[0], "THE DOMINATOR" };
-      String piece2color = randomColor();
-      while (stringToColor(piece2color).equals(stringToColor(colors[0])))
-        piece2color = randomColor();
-      this.myPieceColors = new String[] { colors[0], piece2color, "light gray" };
       this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
       this.myWallCount = new int[] { this.myWallNumber, this.myWallNumber };
     } else {
       this.myWallNumber = ((this.myBoardSize - 1) * (3 * this.myBoardSize - 3) / 8 / this.myPlayers);
       this.myWallCount = new int[this.myPlayers];
-      this.myNames = new String[this.myPlayers];
-      this.myPieceColors = new String[this.myPlayers + 1];
       for (int i = 0; i < this.myPlayers; i++) {
         this.myWallCount[i] = this.myWallNumber;
-        this.myNames[i] = names[i];
-        this.myPieceColors[i] = colors[i];
       }
-      this.myPieceColors[this.myPlayers] = "light gray";
     }
 
     if (this.myPlayers != 4) {
@@ -117,15 +87,10 @@ public class HexBoard extends JPanel
       this.myHexBoard[(2 * this.myBoardSize - (this.myBoardSize - 1) / 4 - 1)][((this.myBoardSize + 1) * 3 / 2 - 2)] = 5;
       this.myHexBoard[((this.myBoardSize - 1) / 4 + 1)][((this.myBoardSize + 1) / 2)] = 6;
     }
-
-    setBackground(Color.gray);
   }
 
-  private void initialize() {
-    this.myWidth = 700;
-    this.myWallWidth = (this.myWidth / (5 * this.myBoardSize));
-    this.myRadius = ((int)(this.myWidth / (1.5D * this.myBoardSize) - this.myWallWidth));
-
+  private void initialize()
+	{
     this.wallException = new IllegalArgumentException("There is a wall between where you are and where you want to be.");
     this.wallFilled = new IllegalArgumentException("There is a wall already there!");
     this.blockException = new IllegalArgumentException("You may not block anybody from getting to their goal row");
@@ -133,177 +98,15 @@ public class HexBoard extends JPanel
     this.myTurn = 1;
 
     this.myHexBoard = new int[2 * this.myBoardSize + 1][2 * this.myBoardSize + 1];
-    setPreferredSize(new Dimension(this.myWidth, this.myWidth));
   }
 
-  public void paintComponent(Graphics pen)
-  {
-    super.paintComponent(pen);
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-      for (int j = 1; j <= this.myBoardSize; j++) {
-        pen.setColor(Color.lightGray);
-        if (((!isEven(i)) || (isEven(j))) && ((isEven(i)) || (!isEven(j))) && 
-          (i + j >= (this.myBoardSize + 1) / 2 + 1) && (j >= 1) && (j <= this.myBoardSize) && 
-          (i - j <= 1.5D * (this.myBoardSize + 1) - 3.0D) && (i + j <= 2.5D * (this.myBoardSize + 1) - 3.0D) && (j - i <= (this.myBoardSize + 1) / 2 - 1))
-          paintBlock(pen, this.myWidth * i / (2 * this.myBoardSize), 
-            (int)(this.myWidth * j / this.myBoardSize * 
-            Math.sin(1.047197551196598D)), this.myRadius + 2);
-        if ((i + j == (this.myBoardSize + 1) / 2 + 1) || (j == 1) || (j == this.myBoardSize) || (i - j == 1.5D * (this.myBoardSize + 1) - 3.0D) || 
-          (i + j == 2.5D * (this.myBoardSize + 1) - 3.0D) || (j - i == (this.myBoardSize + 1) / 2 - 1))
-          pen.setColor(Color.darkGray);
-        else
-          pen.setColor(Color.black);
-        if (((!isEven(i)) || (isEven(j))) && ((isEven(i)) || (!isEven(j))) && 
-          (i + j >= (this.myBoardSize + 1) / 2 + 1) && (j >= 1) && (j <= this.myBoardSize) && 
-          (i - j <= 1.5D * (this.myBoardSize + 1) - 3.0D) && (i + j <= 2.5D * (this.myBoardSize + 1) - 3.0D) && (j - i <= (this.myBoardSize + 1) / 2 - 1)) {
-          paintBlock(pen, this.myWidth * i / (2 * this.myBoardSize), 
-            (int)(this.myWidth * j / this.myBoardSize * 
-            Math.sin(1.047197551196598D)), this.myRadius);
-        }
-      }
-    }
-    paintPieces(pen);
-    paintWalls(pen);
-  }
-
-  public void paintBlock(Graphics pen, int x, int y, int radius)
-  {
-    int radiusCos60 = (int)(radius * Math.cos(1.047197551196598D));
-    int radiusSin60 = (int)(radius * Math.sin(1.047197551196598D));
-    int[] xpos = { x, x - radiusSin60, x - radiusSin60, x, x + radiusSin60, x + radiusSin60 };
-    int[] ypos = { y + radius, y + radiusCos60, y - radiusCos60, y - radius, y - radiusCos60, y + radiusCos60 };
-    pen.fillPolygon(xpos, ypos, 6);
-  }
-
-  public void paintPieces(Graphics pen)
-  {
-    for (int piece = 1; piece <= this.myPlayers + 1; piece++) {
-      pen.setColor(Color.white);
-      if (exist(piece))
-        pen.fillOval(this.myWidth * getColumn(piece) / (2 * this.myBoardSize) - this.myRadius + this.myWallWidth - 1, 
-          (int)(this.myWidth * (
-          getRow(piece) + 1) / (2 * this.myBoardSize) * Math.sin(1.047197551196598D) - this.myRadius + this.myWallWidth) - 1, 
-          (this.myRadius - this.myWallWidth) * 2 + 2, (this.myRadius - this.myWallWidth) * 2 + 2);
-      pen.setColor(stringToColor(this.myPieceColors[(piece - 1)]));
-      if (exist(piece))
-        pen.fillOval(this.myWidth * getColumn(piece) / (2 * this.myBoardSize) - this.myRadius + this.myWallWidth, 
-          (int)(this.myWidth * (
-          getRow(piece) + 1) / (2 * this.myBoardSize) * Math.sin(1.047197551196598D) - this.myRadius + this.myWallWidth), 
-          (this.myRadius - this.myWallWidth) * 2, (this.myRadius - this.myWallWidth) * 2);
-    }
-  }
-
-  public void paintWalls(Graphics pen)
-  {
-    int[] xpos = new int[6];
-    int[] ypos = new int[6];
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 0; j <= 2 * this.myBoardSize; j += 2) {
-        if ((this.myHexBoard[i][j] == 8) || (this.myHexBoard[i][j] == 9) || (this.myHexBoard[i][j] == 10)) {
-          if (this.myHexBoard[i][j] == 8)
-            pen.setColor(this.myWallColor);
-          if (this.myHexBoard[i][j] == 9)
-            pen.setColor(this.myTempWallColor);
-          if (this.myHexBoard[i][j] == 10)
-            pen.setColor(Color.red);
-          if (((isEven(i)) && (!isEven(j / 2))) || ((!isEven(i)) && (isEven(j / 2)))) {
-            xpos[0] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[1] = (this.myWidth * i / (2 * this.myBoardSize) + this.myWallWidth / 3);
-            xpos[2] = (this.myWidth * (i + 1) / (2 * this.myBoardSize));
-            xpos[3] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[4] = (this.myWidth * (i - 1) / (2 * this.myBoardSize));
-            xpos[5] = (this.myWidth * i / (2 * this.myBoardSize) - this.myWallWidth / 3);
-            ypos[0] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 1.5D) * 
-              Math.sin(1.047197551196598D)));
-            ypos[1] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-            ypos[2] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[3] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 2) * 
-              Math.sin(1.047197551196598D)));
-            ypos[4] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[5] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-          } else {
-            xpos[0] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[1] = (this.myWidth * i / (2 * this.myBoardSize) + this.myWallWidth / 3);
-            xpos[2] = (this.myWidth * (i + 1) / (2 * this.myBoardSize));
-            xpos[3] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[4] = (this.myWidth * (i - 1) / (2 * this.myBoardSize));
-            xpos[5] = (this.myWidth * i / (2 * this.myBoardSize) - this.myWallWidth / 3);
-            ypos[0] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 1.5D) * 
-              Math.sin(1.047197551196598D)));
-            ypos[1] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-            ypos[2] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[3] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 2) * 
-              Math.sin(1.047197551196598D)));
-            ypos[4] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[5] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-          }
-          pen.fillPolygon(xpos, ypos, 6);
-        }
-      }
-    }
-    repaint();
-  }
-
-  public int xPosToElement(int x)
-  {
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      if ((x > this.myWidth * (i - 1) / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize)) && 
-        (x <= this.myWidth * i / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize)))
-        return i;
-    }
-    throw new IllegalArgumentException("Click somewhere ON the board.");
-  }
-
-  public int yPosToElement(int x, int y)
-  {
-    int xElement = xPosToElement(x);
-    int j = 1;
-    if (isEven(xElement))
-      for (int i = 0; i <= 2 * this.myBoardSize; i++)
-        if (!isEven((i + 1) / 2)) {
-          if ((y > this.myWidth * i / (2 * this.myBoardSize) * Math.sin(1.047197551196598D)) && 
-            (y <= this.myWidth * (i + 1) / (2 * this.myBoardSize) * Math.sin(1.047197551196598D)))
-            return i - i % 2;
-        } else {
-          j = i / 2;
-          if ((y > (this.myWidth * j / this.myBoardSize - this.myWidth / (2 * this.myBoardSize)) * Math.sin(1.047197551196598D)) && 
-            (y <= (this.myWidth * (j + 1) / this.myBoardSize - this.myWidth / (2 * this.myBoardSize)) * Math.sin(1.047197551196598D)))
-            return 2 * j - 1;
-        }
-    if (!isEven(xElement))
-      for (int i = 0; i <= 2 * this.myBoardSize; i++)
-        if (isEven((i + 1) / 2)) {
-          if ((y > this.myWidth * i / (2 * this.myBoardSize) * Math.sin(1.047197551196598D)) && 
-            (y <= this.myWidth * (i + 1) / (2 * this.myBoardSize) * Math.sin(1.047197551196598D)))
-            return i - i % 2;
-        } else {
-          j = i / 2;
-          if ((y > (this.myWidth * j / this.myBoardSize - this.myWidth / (2 * this.myBoardSize)) * Math.sin(1.047197551196598D)) && 
-            (y <= (this.myWidth * (j + 1) / this.myBoardSize - this.myWidth / (2 * this.myBoardSize)) * Math.sin(1.047197551196598D)))
-            return 2 * j - 1;
-        }
-    throw new IllegalArgumentException("Click somewhere on the board.");
-  }
+	public void move(int x, int y)
+	{
+		if (!isEven(y))
+    	changePos(x, y);
+		else
+      addWall(8, x, y, false);
+	}
 
   public void changePos(int x, int y)
   {
@@ -316,7 +119,6 @@ public class HexBoard extends JPanel
       this.myHexBoard[i][j] = 0;
       this.myHexBoard[x][y] = piece;
       this.myTurn += 1;
-      repaint();
       if (gameOver(piece, x, y)) {
         throw new IllegalArgumentException(this.myNames[(piece - 1)] + " WINS!!");
       }
@@ -786,11 +588,6 @@ public class HexBoard extends JPanel
     return dist1 - dist2 + 0.5D * (wallNum2 - wallNum1);
   }
 
-  public boolean getComp()
-  {
-    return this.compPlay;
-  }
-
   public boolean gameOver(int piece, int x, int y)
   {
     if ((piece == 1) && (((this.myPlayers != 4) && (y == 2 * this.myBoardSize - 1)) || ((this.myPlayers == 4) && (y - 2 * x == this.myBoardSize - 2))))
@@ -821,29 +618,6 @@ public class HexBoard extends JPanel
       return true;
     }
     return false;
-  }
-
-  public void tempPos(int x, int y)
-  {
-    int piece = getPlayer();
-    int i = getColumn(piece);
-    int j = getRow(piece);
-
-    if (checkPos(this.myHexBoard, i, j, x, y, true)) {
-      this.myHexBoard[x][y] = (this.myPlayers + 1);
-    }
-    repaint();
-  }
-
-  public void removeTemp()
-  {
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 0; j <= 2 * this.myBoardSize; j++) {
-        if ((this.myHexBoard[i][j] == this.myPlayers + 1) || (this.myHexBoard[i][j] == 9) || (this.myHexBoard[i][j] == 10))
-          this.myHexBoard[i][j] = 0;
-      }
-    }
-    repaint();
   }
 
   public int[][] deepCopy(int[][] board)
@@ -894,16 +668,6 @@ public class HexBoard extends JPanel
     return this.myNames[(piece - 1)];
   }
 
-  public String[] getNames()
-  {
-    return this.myNames;
-  }
-
-  public String[] getColors()
-  {
-    return this.myPieceColors;
-  }
-
   public int getBoardSize()
   {
     return this.myBoardSize;
@@ -937,100 +701,5 @@ public class HexBoard extends JPanel
       }
     }
     throw new IllegalArgumentException("piece doesn't exist");
-  }
-
-  public boolean exist(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-      for (int j = 1; j <= 2 * this.myBoardSize - 1; j++) {
-        if (this.myHexBoard[i][j] == piece)
-          return true;
-      }
-    }
-    return false;
-  }
-
-  private static Color stringToColor(String color)
-  {
-    if (color.equalsIgnoreCase("red"))
-      return Color.red;
-    if (color.equalsIgnoreCase("green"))
-      return Color.decode("#00aa00");
-    if (color.equalsIgnoreCase("light green"))
-      return Color.green;
-    if (color.equalsIgnoreCase("dark green"))
-      return Color.decode("#008040");
-    if (color.equalsIgnoreCase("black"))
-      return Color.black;
-    if (color.equalsIgnoreCase("magenta"))
-      return Color.magenta;
-    if ((color.equalsIgnoreCase("dark gray")) || (color.equalsIgnoreCase("dark grey")) || (color.equalsIgnoreCase("darkgray")) || 
-      (color.equalsIgnoreCase("darkgrey")))
-      return Color.darkGray;
-    if (color.equalsIgnoreCase("gray"))
-      return Color.gray;
-    if ((color.equalsIgnoreCase("yellow")) || (color.equalsIgnoreCase("gold")))
-      return Color.decode("#ffd700");
-    if (color.equalsIgnoreCase("sun"))
-      return Color.yellow;
-    if (color.equalsIgnoreCase("blue"))
-      return Color.blue;
-    if (color.equalsIgnoreCase("light blue"))
-      return Color.decode("#4080ff");
-    if (color.equalsIgnoreCase("cyan"))
-      return Color.cyan;
-    if ((color.equalsIgnoreCase("light gray")) || (color.equalsIgnoreCase("light grey")) || 
-      (color.equalsIgnoreCase("lightgray")) || (color.equalsIgnoreCase("lightgrey")))
-      return Color.lightGray;
-    if (color.equalsIgnoreCase("pink"))
-      return Color.decode("#ff3080");
-    if (color.equalsIgnoreCase("orange"))
-      return Color.decode("#ff6020");
-    if ((color.equalsIgnoreCase("gray")) || (color.equalsIgnoreCase("grey")))
-      return Color.gray;
-    if ((color.equalsIgnoreCase("white")) || (color.equalsIgnoreCase("empty")) || (color.equalsIgnoreCase("brads mind")) || 
-      (color.equalsIgnoreCase("surrender")))
-      return Color.white;
-    if (color.equalsIgnoreCase("purple"))
-      return Color.decode("#750075");
-    if (color.equalsIgnoreCase("dark brown"))
-      return Color.decode("#402000");
-    if (color.equalsIgnoreCase("brown"))
-      return Color.decode("#876543");
-    if (color.equalsIgnoreCase("dark blue"))
-      return Color.decode("#202080");
-    if ((color.equalsIgnoreCase("dark red")) || (color.equalsIgnoreCase("maroon")))
-      return Color.decode("#600020");
-    if (color.equalsIgnoreCase("clear")) {
-      return Color.decode("#000000");
-    }
-    return Color.decode("#123321");
-  }
-
-  public static String randomColor() {
-    int rand = (int)Math.ceil(Math.random() * 10.0D);
-    switch (rand) {
-    case 1:
-      return "red";
-    case 2:
-      return "orange";
-    case 3:
-      return "light green";
-    case 4:
-      return "clear";
-    case 5:
-      return "dark green";
-    case 6:
-      return "yellow";
-    case 7:
-      return "pink";
-    case 8:
-      return "purple";
-    case 9:
-      return "light blue";
-    case 10:
-      return "dark blue";
-    }
-    return "white";
   }
 }

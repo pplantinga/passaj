@@ -14,7 +14,6 @@ import javax.swing.JTextArea;
 public class RuleGUIDriver extends JFrame
   implements ActionListener, WindowListener
 {
-  private static final long serialVersionUID = 1234567890987654321L;
   private JTextArea myArea;
   private JButton myEnglish;
   private JButton myFrench;
@@ -23,27 +22,17 @@ public class RuleGUIDriver extends JFrame
   private JButton myGerman;
   private JButton myItalian;
   private JPanel myPanel;
-  private Board myBoard = new Board();
-  private HexBoard myHexBoard = new HexBoard();
-  private boolean myHex = false;
+	private QuoridorGUIDriver driver;
 
   public RuleGUIDriver()
   {
     initialize();
   }
 
-  public RuleGUIDriver(Board board)
+  public RuleGUIDriver(QuoridorGUIDriver qgd)
   {
     initialize();
-    this.myBoard = board;
-    this.myHex = false;
-  }
-
-  public RuleGUIDriver(HexBoard hexBoard)
-  {
-    initialize();
-    this.myHexBoard = hexBoard;
-    this.myHex = true;
+    this.driver = qgd;
   }
 
   public void initialize()
@@ -134,15 +123,7 @@ public class RuleGUIDriver extends JFrame
 
   public void windowClosing(WindowEvent e) {
     setVisible(false);
-    if (this.myHex) {
-      QuoridorGUIDriver hex = new QuoridorGUIDriver(this.myHexBoard);
-      hex.pack();
-      hex.setVisible(true);
-    } else {
-      QuoridorGUIDriver pass = new QuoridorGUIDriver(this.myBoard);
-      pass.pack();
-      pass.setVisible(true);
-    }
+		this.driver.setVisible(true);
   }
 
   public void windowDeactivated(WindowEvent e)

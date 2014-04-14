@@ -11,65 +11,71 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+/**
+ * This class displays the quoridor board and handles interactions.
+ */
 public class QuoridorGUIDriver extends JFrame
   implements ActionListener, MouseListener, MouseMotionListener
 {
-  private static final long serialVersionUID = 3141592653589793238L;
-  private Board myBoard;
   private JTextField myField;
   private JButton myButton;
   private JButton ruleButton;
   private JButton quitButton;
   private JPanel myPanel;
+  private Board myBoard;
   private HexBoard myHexBoard;
-  private boolean myHex;
+	private BoardPanel myBoardPanel;
+  private String myType;
+	private String[] myNames;
+	private int playerCount;
+	private int boardSize;
+	private int compLevel;
+ 
 
   public QuoridorGUIDriver()
-  {
+	{
     this.myBoard = new Board();
-    this.myHex = false;
+    this.myType = "default";
     initialize();
   }
 
-  public QuoridorGUIDriver(Board board)
-  {
-    this.myBoard = board;
-    this.myHex = false;
-    initialize();
-  }
+  public QuoridorGUIDriver(String[] names, String[] colors, String type, int size, int compLevel)
+	{
+		this.myNames = names;
+		this.playerCount = names.length;
+		this.boardSize = size;
+		this.compLevel = compLevel;
+		this.myType = type;
+		this.myBoardPanel = new BoardPanel(colors, size, type);
 
-  public QuoridorGUIDriver(HexBoard hexBoard)
-  {
-    this.myHexBoard = hexBoard;
-    this.myHex = true;
-    initialize();
-  }
-
-  public QuoridorGUIDriver(String[] names, String[] colors, int size, int compLevel, String type)
-  {
-		if (type == "Hexagonal")
-		{
-			this.myHexBoard = new HexBoard(names, colors, size, compLevel);
-			this.myHex = true;
-		}
+		if (type == "hexagonal")
+			this.myHexBoard = new HexBoard(this.playerCount, size, compLevel);
 		else
-		{
-			this.myBoard = new Board(names, colors, size, compLevel);
-			this.myHex = false;
-		}
+			this.myBoard = new Board(this.playerCount, size, compLevel);
+
     initialize();
   }
 
+	/**
+	 * Rev up your engines, ladies and gentlemen.
+	 */
   public void initialize()
-  {
-    setTitle("TERRIFICAL PASSAJ!");
-    if (this.myHex) {
+	{
+    setTitle("Welcome to Passaj!");
+
+		// Add action listeners
+    if (this.myType == "hexagonal")
+    {
       this.myHexBoard.addMouseListener(this);
       this.myHexBoard.addMouseMotionListener(this);
-    } else {
+    }
+    else
+    {
       this.myBoard.addMouseListener(this);
       this.myBoard.addMouseMotionListener(this);
     }
+
+		// Initialize UI elements
     this.myField = new JTextField();
     this.myField.setEditable(false);
     this.myButton = new JButton("New Game of PASSAJ");
@@ -84,174 +90,159 @@ public class QuoridorGUIDriver extends JFrame
     this.quitButton.addActionListener(this);
     this.quitButton.setVisible(true);
     this.quitButton.setActionCommand("quit");
+
+		// Add things to the layout
     this.myPanel = new JPanel();
     this.myPanel.add(this.ruleButton, "East");
     this.myPanel.add(this.quitButton, "Center");
     this.myPanel.add(this.myButton, "West");
     setLayout(new BorderLayout());
-    if (this.myHex)
+    if (this.myType == "hexagonal")
       add(this.myHexBoard, "North");
     else
       add(this.myBoard, "North");
     add(this.myPanel, "South");
     add(this.myField, "Center");
     setDefaultCloseOperation(3);
+
+		// Begin with friendly welcoming text.
     String openText = "Welcome to the match-up between ";
-    if (this.myHex) {
-      for (int i = 1; i < this.myHexBoard.getPlayers(); i++)
-        openText = openText + this.myHexBoard.getName(i) + " and ";
-      openText = openText + this.myHexBoard.getName(this.myHexBoard.getPlayers()) + ".";
-    } else {
-      for (int i = 1; i < this.myBoard.getPlayers(); i++)
-        openText = openText + this.myBoard.getName(i) + " and ";
-      openText = openText + this.myBoard.getName(this.myBoard.getPlayers()) + ".";
-    }
+		for (int i = 0; i < this.playerCount - 1; i++)
+			openText += this.myNames[i] + " and ";
+		openText += this.myNames[this.playerCount] + ".";
     this.myField.setText(openText);
   }
 
+	// Begin.
   public static void main(String[] args)
-  {
+	{
     QuoridorGUIDriver pass = new QuoridorGUIDriver();
     pass.pack();
     pass.setVisible(true);
   }
 
-  public void actionPerformed(ActionEvent e) {
-    if (e.getActionCommand().equals("new game")) {
-      if (this.myHex) {
-        InputGUIDriver input = new InputGUIDriver(this.myHexBoard.getNames(), this.myHexBoard.getColors(), "hexagonal", this.myHexBoard.getBoardSize(), this.myHexBoard.getCompLevel());
-        input.pack();
-        input.setVisible(true);
-        setVisible(false);
-      } else {
-        InputGUIDriver input = new InputGUIDriver(this.myBoard.getNames(), this.myBoard.getColors(), "default", this.myBoard.getBoardSize(), this.myBoard.getCompLevel());
-        input.pack();
-        input.setVisible(true);
-        setVisible(false);
-      }
+	/**
+	 * Handle button clicks.
+	 */
+  public void actionPerformed(ActionEvent e)
+  {
+    // Player clicked on "new game" button
+		if (e.getActionCommand().equals("new game"))
+    {
+      InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.type, this.boardSize, this.compLevel);
+			input.pack();
+			input.setVisible(true);
+			setVisible(false);
     }
 
-    if (e.getActionCommand().equals("rules")) {
-      if (this.myHex) {
-        RuleGUIDriver hexRule = new RuleGUIDriver(this.myHexBoard);
-        hexRule.pack();
-        hexRule.setVisible(true);
-        setVisible(false);
-      } else {
-        RuleGUIDriver rule = new RuleGUIDriver(this.myBoard);
-        rule.pack();
-        rule.setVisible(true);
-        setVisible(false);
-      }
+		// Player clicked on "rules" button
+    if (e.getActionCommand().equals("rules"))
+    {
+			RuleGUIDriver rule = new RuleGUIDriver(this);
+
+			rule.pack();
+			rule.setVisible(true);
+			this.setVisible(false);
     }
+
+		// User clicked on "quit" button, so QUIT
     if (e.getActionCommand().equals("quit"))
       System.exit(128);
   }
 
+	/**
+	 * The player just made a move!
+	 */
   public void mouseClicked(MouseEvent e)
-  {
-    if (this.myHex)
-      try {
-        if (!this.myHexBoard.isEven(this.myHexBoard.yPosToElement(e.getX(), e.getY())))
-          this.myHexBoard.changePos(this.myHexBoard.xPosToElement(e.getX()), this.myHexBoard.yPosToElement(e.getX(), e.getY()));
-        if (this.myHexBoard.isEven(this.myHexBoard.yPosToElement(e.getX(), e.getY())))
-          this.myHexBoard.addWall(8, this.myHexBoard.xPosToElement(e.getX()), this.myHexBoard.yPosToElement(e.getX(), e.getY()), false);
-        if ((this.myHexBoard.getComp()) && (this.myHexBoard.isEven(this.myHexBoard.getTurn()))) {
-          this.myHexBoard.moveComp(2);
-        }
-        String fieldText = "";
-        for (int i = 1; i <= this.myHexBoard.getPlayers(); i++)
-          fieldText = fieldText + this.myHexBoard.getName(i) + " " + this.myHexBoard.getWallCount(i) + " ";
-        fieldText = fieldText + "  walls left.  Player's Turn: " + this.myHexBoard.getName(this.myHexBoard.getPlayer());
-        this.myField.setText(fieldText);
-      }
-      catch (Exception er) {
-        for (int i = 1; i <= this.myHexBoard.getPlayers(); i++)
-          if (er.getMessage().equals(this.myHexBoard.getName(i) + " WINS!!")) {
-            this.myHexBoard.removeMouseListener(this);
-            this.myHexBoard.removeMouseMotionListener(this);
-            this.ruleButton.removeActionListener(this);
-          }
-        this.myField.setText(er.getMessage());
-      }
-    else
-      try {
-        if (this.myBoard.isHorizontal(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY())))
-          this.myBoard.addWall(6, this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()), this.myBoard
-            .isTopLeftHalf(e.getX()));
-        else if (this.myBoard.isVertical(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY())))
-          this.myBoard.addWall(6, this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()), this.myBoard
-            .isTopLeftHalf(e.getY()));
-        else if ((!this.myBoard.isEven(this.myBoard.posToElement(e.getX()))) && (!this.myBoard.isEven(this.myBoard.posToElement(e.getY()))))
-          this.myBoard.changePos(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()));
-        this.myBoard.repaint();
+	{
+    if (this.myType == "hexagonal")
+		{
+      try
+      {
+				int x = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "x");
+				int y = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "y");
+				this.myHexBoard.move(x, y);
+				this.myBoardPanel.move(x, y);
+				
+				if (compLevel != 0)
+					this.myHexBoard.moveComp(2);
 
-        if ((this.myBoard.getComp()) && (this.myBoard.getPlayer() == 2)) {
-          this.myBoard.moveComp(2);
-        }
         String fieldText = "";
-        for (int i = 1; i <= this.myBoard.getPlayers(); i++)
-          fieldText = fieldText + this.myBoard.getName(i) + " " + this.myBoard.getWallCount(i) + " ";
-        fieldText = fieldText + "  walls left.  Player's Turn: " + this.myBoard.getName(this.myBoard.getPlayer());
+        for (int i = 0; i < this.playerCount; i++)
+				{
+          fieldText += this.myNames[i] + " ";
+					fieldText += this.myHexBoard.getWallCount(i) + " ";
+				}
+
+        fieldText += "  walls left. Player's Turn: "
+					+ this.myNames[this.myHexBoard.getPlayer() - 1];
+
         this.myField.setText(fieldText);
       }
-      catch (Exception er) {
-        this.myField.setText(er.getMessage());
-        for (int i = 1; i <= this.myBoard.getPlayers(); i++)
-          if (er.getMessage().equals(this.myBoard.getName(i) + " WINS!!")) {
-            this.myBoard.removeMouseListener(this);
-            this.myBoard.removeMouseMotionListener(this);
-            this.ruleButton.removeActionListener(this);
-          }
+      catch (Exception err)
+      {
+        this.myField.setText(err.getMessage());
       }
+		}
+
+    // Default board
+		else
+		{
+      try
+      {
+				int x = this.myBoardPanel.pixToPos(e.getX());
+				int y = this.myBoardPanel.pixToPos(e.getY());
+				boolean xhalf = this.myBoardPanel.isTopLeftHalf(e.getX());
+				boolean yhalf = this.myBoardPanel.isTopLeftHalf(e.getY());
+				this.myBoard.move(x, y, xhalf, yhalf);
+        this.myBoardPanel.repaint();
+
+        if (this.compLevel != 0)
+          this.myBoard.moveComp(2);
+
+        String fieldText = "";
+				for (int i = 0; i < this.playerCount; i++)
+          fieldText += this.myNames[i] + " "
+						+ this.myBoard.getWallCount(i) + " ";
+
+        fieldText += "  walls left.  Player's Turn: "
+					+ this.myNames[this.myBoard.getPlayer()];
+        this.myField.setText(fieldText);
+      }
+      catch (Exception ex)
+      {
+        this.myField.setText(ex.getMessage());
+      }
+		}
   }
 
+	/**
+	 * When the player moves the mouse, display a helpful temporary
+	 * piece or wall where they would move if they clicked.
+	 */
   public void mouseMoved(MouseEvent e)
-  {
-    if (this.myHex) {
-      this.myHexBoard.removeTemp();
-      try {
-        if (this.myHexBoard.isEven(this.myHexBoard.yPosToElement(e.getX(), e.getY())))
-          this.myHexBoard.addWall(9, this.myHexBoard.xPosToElement(e.getX()), this.myHexBoard.yPosToElement(e.getX(), e.getY()), false);
-        else if (!this.myHexBoard.isEven(this.myHexBoard.yPosToElement(e.getX(), e.getY())))
-          this.myHexBoard.tempPos(this.myHexBoard.xPosToElement(e.getX()), this.myHexBoard.yPosToElement(e.getX(), e.getY()));
-      } catch (Exception localException) {
-      }
-    } else {
-      this.myBoard.removeTemp();
-      try {
-        if (this.myBoard.isHorizontal(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY())))
-          this.myBoard.addWall(7, this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()), this.myBoard
-            .isTopLeftHalf(e.getX()));
-        else if (this.myBoard.isVertical(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY())))
-          this.myBoard.addWall(7, this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()), this.myBoard
-            .isTopLeftHalf(e.getY()));
-        else if ((!this.myBoard.isEven(this.myBoard.posToElement(e.getX()))) && (!this.myBoard.isEven(this.myBoard.posToElement(e.getY()))))
-          this.myBoard.tempPos(this.myBoard.posToElement(e.getX()), this.myBoard.posToElement(e.getY()));
-      }
-      catch (Exception localException1)
-      {
-      }
-    }
+	{
+		// TODO Implement this.
   }
 
   public void mouseEntered(MouseEvent e)
-  {
+	{
   }
 
   public void mouseExited(MouseEvent arg0)
-  {
+	{
   }
 
   public void mousePressed(MouseEvent arg0)
-  {
+	{
   }
 
   public void mouseReleased(MouseEvent arg0)
-  {
+	{
   }
 
   public void mouseDragged(MouseEvent e)
-  {
+	{
   }
+
 }

@@ -1,41 +1,17 @@
 package passaj;
 
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Graphics;
 import java.util.ArrayList;
-import javax.swing.JPanel;
 
-public class Board extends JPanel
+public class Board
 {
-  private static final long serialVersionUID = 2718281828459045235L;
-  public static final int DEFAULT_WIDTH = 700;
-  public static final int DEFAULT_WALL_WIDTH = 15;
-  public static final int DEFAULT_BOARDSIZE = 9;
-  public static final String DEFAULT_PIECE1_COLOR = "gold";
-  public static final String DEFAULT_TEMPPIECE_COLOR = "light grey";
-  public static final String DEFAULT_NAME1 = "Peter Plantinga";
-  public static final String DEFAULT_NAME2 = "THE DOMINATOR";
-  public static final Color DEFAULT_WALL_COLOR = stringToColor("dark brown");
-  public static final Color DEFAULT_BLOCK_COLOR = stringToColor("black");
-	public static final Color DEFAULT_LASTROW_COLOR = stringToColor("dark grey");
-  public static final Color DEFAULT_TEMPWALL_COLOR = stringToColor("brown");
   private int[][] myBoard;
   private int[][] testBoard;
   private int[] myWallCount;
-  private int myWidth;
-  private int myBlockWidth;
-  private int myWallWidth;
-  private int myPieceDiameter;
   private int myTurn;
   private int myBoardSize;
   private int myPlayers;
   private int myCompLevel;
   private int myWallNumber;
-  private String[] myNames;
-  private String[] myPieceColors;
-  private Color myWallColor;
-  private Color myTempWallColor;
   private IllegalArgumentException wallException;
   private IllegalArgumentException wallFilled;
   private IllegalArgumentException blockException;
@@ -44,28 +20,17 @@ public class Board extends JPanel
   public Board()
   {
     this.myBoardSize = 9;
-    this.myNames = new String[] { "Peter Plantinga", "THE DOMINATOR" };
-    String piece2color = randomColor();
-    while (stringToColor(piece2color).equals(stringToColor("gold")))
-      piece2color = randomColor();
-    this.myPieceColors = new String[] { "gold", piece2color, "light grey" };
     this.myPlayers = 2;
-    this.compPlay = true;
-    this.myCompLevel = 1;
-
+    this.myCompLevel = 0;
     this.myWallNumber = numberOfWalls(9, 2);
     this.myWallCount = new int[] { this.myWallNumber, this.myWallNumber };
 
-    setBackground(Color.gray);
     initialize();
   }
 
   public Board(Board board) {
     this.myBoardSize = board.getBoardSize();
-    this.myNames = board.getNames();
-    this.myPieceColors = board.getColors();
     this.myPlayers = board.getPlayers();
-    this.compPlay = (this.myNames[1] == "THE DOMINATOR");
     this.myCompLevel = board.getCompLevel();
 
     this.myWallCount = new int[this.myPlayers];
@@ -73,43 +38,22 @@ public class Board extends JPanel
       this.myWallCount[i] = board.getWallCount(i + 1);
     }
 
-    setBackground(Color.gray);
     initialize();
     this.myBoard = deepCopy(board.getBoard());
     this.myTurn = board.getTurn();
   }
 
-  public Board(String[] names, String[] colors, int size, int compLevel)
+  public Board(int playerCount, int size, int compLevel)
   {
     this.myBoardSize = size;
-    if (names.length == 1) {
-      this.myPlayers = 2;
-      this.compPlay = true;
-      this.myCompLevel = compLevel;
-      this.myNames = new String[] { names[0], "THE DOMINATOR" };
-      String piece2color = randomColor();
-      while (stringToColor(piece2color).equals(stringToColor(colors[0])))
-        piece2color = randomColor();
-      this.myPieceColors = new String[] { colors[0], piece2color, "light grey" };
-    } else {
-      if (names.length >= 3)
-        this.myPlayers = 4;
-      else
-        this.myPlayers = 2;
-      this.myNames = names;
-      this.myPieceColors = new String[this.myPlayers + 1];
-      for (int i = 0; i < this.myPlayers; i++)
-        this.myPieceColors[i] = colors[i];
-      this.myPieceColors[this.myPlayers] = "light grey";
-      this.compPlay = false;
-    }
-
+		this.myPlayers = playerCount;
+		this.myCompLevel = compLevel;
    	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
     this.myWallCount = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCount[i] = this.myWallNumber;
     }
-    setBackground(Color.gray);
+
     initialize();
   }
 
@@ -123,12 +67,6 @@ public class Board extends JPanel
 
   public void initialize()
   {
-    this.myWidth = 700;
-    this.myBlockWidth = (565 / this.myBoardSize);
-    this.myWallWidth = (135 / this.myBoardSize);
-    this.myPieceDiameter = (this.myBlockWidth - this.myWallWidth);
-    this.myWallColor = DEFAULT_WALL_COLOR;
-    this.myTempWallColor = DEFAULT_TEMPWALL_COLOR;
     this.myTurn = 1;
 
     this.wallException = new IllegalArgumentException("There is a wall between where you are and where you want to be.");
@@ -160,87 +98,17 @@ public class Board extends JPanel
         }
       }
     }
-    setPreferredSize(new Dimension(this.myWidth, this.myWidth));
   }
 
-  public void paintComponent(Graphics pen)
-  {
-    super.paintComponent(pen);
-    for (int i = 0; i <= this.myBoardSize - 1; i++) {
-      for (int j = 0; j <= this.myBoardSize - 1; j++) {
-        pen.setColor(Color.lightGray);
-        paintBlock(pen, this.myWidth * i / this.myBoardSize + this.myWallWidth / 2 - 1, 
-          this.myWidth * j / this.myBoardSize + this.myWallWidth / 2 - 1, this.myBlockWidth + 2);
-        if ((j == 0) || (j == this.myBoardSize - 1) || ((this.myPlayers == 4) && ((i == 0) || (i == this.myBoardSize - 1))))
-          pen.setColor(DEFAULT_LASTROW_COLOR);
-        else
-          pen.setColor(DEFAULT_BLOCK_COLOR);
-        paintBlock(pen, this.myWidth * i / this.myBoardSize + this.myWallWidth / 2, 
-          this.myWidth * j / this.myBoardSize + this.myWallWidth / 2, this.myBlockWidth);
-      }
-    }
-    paintPieces(pen);
-    paintWalls(pen);
-  }
-
-  public void paintBlock(Graphics pen, int xPos, int yPos, int width)
-  {
-    pen.fillRoundRect(xPos, yPos, width, width, this.myWallWidth, this.myWallWidth);
-  }
-
-  public void paintPieces(Graphics pen)
-  {
-    for (int piece = 1; piece <= this.myPlayers + 1; piece++)
-      if (exist(piece)) {
-        pen.setColor(Color.white);
-        pen
-          .fillOval(
-          this.myWidth * (getColumn(piece) / 2) / this.myBoardSize + this.myWallWidth / 2 + this.myBlockWidth / 2 - this.myPieceDiameter / 2 - 1, 
-          this.myWidth * (getRow(piece) / 2) / this.myBoardSize + this.myWallWidth / 2 + this.myBlockWidth / 2 - this.myPieceDiameter / 2 - 1, 
-          this.myPieceDiameter + 2, this.myPieceDiameter + 2);
-        pen.setColor(stringToColor(this.myPieceColors[(piece - 1)]));
-        pen
-          .fillOval(
-          this.myWidth * (getColumn(piece) / 2) / this.myBoardSize + this.myWallWidth / 2 + this.myBlockWidth / 2 - this.myPieceDiameter / 2, 
-          this.myWidth * (getRow(piece) / 2) / this.myBoardSize + this.myWallWidth / 2 + this.myBlockWidth / 2 - this.myPieceDiameter / 2, 
-          this.myPieceDiameter, this.myPieceDiameter);
-      }
-  }
-
-  public void paintWalls(Graphics pen)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++)
-      for (int j = 1; j <= 2 * this.myBoardSize - 1; j++)
-        if ((this.myBoard[i][j] == 6) || (this.myBoard[i][j] == 7) || (this.myBoard[i][j] == 8)) {
-          if (this.myBoard[i][j] == 6)
-            pen.setColor(this.myWallColor);
-          if (this.myBoard[i][j] == 7)
-            pen.setColor(this.myTempWallColor);
-          if (this.myBoard[i][j] == 8)
-            pen.setColor(Color.red);
-          if ((isEven(i)) && (!isEven(j)))
-            pen.fillRect(this.myWidth * (i / 2) / this.myBoardSize - this.myWallWidth / 2, this.myWidth * ((j - 1) / 2) / this.myBoardSize + 
-              this.myWallWidth / 2 - 2, this.myWallWidth - 2, this.myBlockWidth + 4);
-          if ((!isEven(i)) && (isEven(j)))
-            pen.fillRect(this.myWidth * ((i - 1) / 2) / this.myBoardSize + this.myWallWidth / 2 - 2, this.myWidth * (j / 2) / 
-              this.myBoardSize - this.myWallWidth / 2, this.myBlockWidth + 4, this.myWallWidth - 2);
-          if ((isEven(i)) && (isEven(j)))
-            pen.fillRect(this.myWidth * (i / 2) / this.myBoardSize - this.myWallWidth / 2, this.myWidth * (j / 2) / this.myBoardSize - 
-              this.myWallWidth / 2, this.myWallWidth - 2, this.myWallWidth - 2);
-        }
-  }
-
-  public int posToElement(int pos)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-      if ((pos > this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (pos <= this.myWidth * i / this.myBoardSize - this.myWallWidth / 2))
-        return i * 2 - 1;
-      if ((pos > this.myWidth * (i - 1) / this.myBoardSize - this.myWallWidth / 2) && 
-        (pos <= this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (i != 0))
-        return i * 2 - 2;
-    }
-    throw new IllegalArgumentException("Click somewhere ON the board.");
-  }
+	public int move(int x, int y, boolean Xhalf, boolean Yhalf)
+	{
+		if (isHorizontal(x, y))
+			addWall(6, x, y, Xhalf);
+		else if (isVertical(x, y))
+			addWall(6, x, y, Yhalf);
+		else if (!isEven(x) && !isEven(y))
+			changePos(x, y);
+	}
 
   public void changePos(int x, int y)
   {
@@ -255,17 +123,7 @@ public class Board extends JPanel
       this.myBoard[i][j] = 0;
       this.myBoard[k][l] = piece;
     }
-    repaint();
-    if (getRow(1) == 2 * this.myBoardSize - 1)
-      throw new IllegalArgumentException(this.myNames[0] + " WINS!!");
-    if (getRow(2) == 1)
-      throw new IllegalArgumentException(this.myNames[1] + " WINS!!");
-    if (this.myPlayers == 4) {
-      if (getColumn(3) == 1)
-        throw new IllegalArgumentException(this.myNames[2] + " WINS!!");
-      if (getColumn(4) == 2 * this.myBoardSize - 1)
-        throw new IllegalArgumentException(this.myNames[3] + " WINS!!");
-    }
+
     this.myTurn += 1;
 
     for (int c = 1; c <= 4; c++)
@@ -309,7 +167,6 @@ public class Board extends JPanel
       this.myWallCount[playerToAdd] -= 1;
       this.myTurn += 1;
     }
-    repaint();
   }
 
   public int checkWall(int x, int y, boolean half, boolean search)
@@ -521,7 +378,6 @@ public class Board extends JPanel
 
   public void moveComp(int player)
   {
-    repaint();
     ArrayList<Integer> path = shorterPath(player);
     if ((path.size() == 4) || (this.myCompLevel == 1) || (this.myWallCount[1] <= 0) || (this.myWallCount[0] == this.myWallNumber)) {
       changePos((path.get(2)), (path.get(3)));
@@ -697,7 +553,6 @@ public class Board extends JPanel
     if (checkPos(this.myBoard, i, j, x, y, true)) {
       this.myBoard[x][y] = (this.myPlayers + 1);
     }
-    repaint();
   }
 
   public void removeTemp()
@@ -708,7 +563,6 @@ public class Board extends JPanel
           this.myBoard[i][j] = 0;
       }
     }
-    repaint();
   }
 
   public int[][] deepCopy(int[][] board)
@@ -720,22 +574,6 @@ public class Board extends JPanel
       }
     }
     return newBoard;
-  }
-
-  public boolean isTopLeftHalf(int pos)
-  {
-    if (posToElement(pos) == 1) {
-      return false;
-    }
-    if (posToElement(pos) == 2 * this.myBoardSize - 1) {
-      return true;
-    }
-    for (int i = 0; i <= 8; i++) {
-      if ((pos > this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && 
-        (pos <= this.myWidth * i / this.myBoardSize - this.myWallWidth / 2 - this.myBlockWidth / 2))
-        return true;
-    }
-    return false;
   }
 
   public boolean isHorizontal(int x, int y)
@@ -790,21 +628,6 @@ public class Board extends JPanel
     return this.myBoard[x][y];
   }
 
-  public String getName(int piece)
-  {
-    return this.myNames[(piece - 1)];
-  }
-
-  public String[] getNames()
-  {
-    return this.myNames;
-  }
-
-  public String[] getColors()
-  {
-    return this.myPieceColors;
-  }
-
   public int[] getWallCounts()
   {
     return this.myWallCount;
@@ -855,89 +678,5 @@ public class Board extends JPanel
       }
     }
     return false;
-  }
-
-  private static Color stringToColor(String color)
-  {
-    if (color.equalsIgnoreCase("red"))
-      return Color.red;
-    if (color.equalsIgnoreCase("green"))
-      return Color.decode("#00aa00");
-    if (color.equalsIgnoreCase("light green"))
-      return Color.green;
-    if (color.equalsIgnoreCase("dark green"))
-      return Color.decode("#008040");
-    if (color.equalsIgnoreCase("black"))
-      return Color.black;
-    if (color.equalsIgnoreCase("magenta"))
-      return Color.magenta;
-    if ((color.equalsIgnoreCase("dark gray")) || (color.equalsIgnoreCase("dark grey")) || (color.equalsIgnoreCase("darkgray")) || 
-      (color.equalsIgnoreCase("darkgrey")))
-      return Color.darkGray;
-    if (color.equalsIgnoreCase("gray"))
-      return Color.gray;
-    if ((color.equalsIgnoreCase("yellow")) || (color.equalsIgnoreCase("gold")))
-      return Color.decode("#ffa700");
-    if (color.equalsIgnoreCase("sun"))
-      return Color.yellow;
-    if (color.equalsIgnoreCase("blue"))
-      return Color.blue;
-    if (color.equalsIgnoreCase("light blue"))
-      return Color.decode("#4080ff");
-    if (color.equalsIgnoreCase("cyan"))
-      return Color.cyan;
-    if ((color.equalsIgnoreCase("light gray")) || (color.equalsIgnoreCase("light grey")) || 
-      (color.equalsIgnoreCase("lightgray")) || (color.equalsIgnoreCase("lightgrey")))
-      return Color.lightGray;
-    if (color.equalsIgnoreCase("pink"))
-      return Color.decode("#ff3080");
-    if (color.equalsIgnoreCase("orange"))
-      return Color.decode("#ff6020");
-    if ((color.equalsIgnoreCase("gray")) || (color.equalsIgnoreCase("grey")))
-      return Color.gray;
-    if ((color.equalsIgnoreCase("white")) || (color.equalsIgnoreCase("empty")) || (color.equalsIgnoreCase("brads mind")) || 
-      (color.equalsIgnoreCase("surrender")))
-      return Color.white;
-    if (color.equalsIgnoreCase("purple"))
-      return Color.decode("#750075");
-    if (color.equalsIgnoreCase("dark brown"))
-      return Color.decode("#402000");
-    if (color.equalsIgnoreCase("brown"))
-      return Color.decode("#876543");
-    if (color.equalsIgnoreCase("dark blue"))
-      return Color.decode("#202080");
-    if ((color.equalsIgnoreCase("dark red")) || (color.equalsIgnoreCase("maroon")))
-      return Color.decode("#600020");
-    if (color.equalsIgnoreCase("clear")) {
-      return Color.decode("#000000");
-    }
-    return Color.decode("#123321");
-  }
-
-  public static String randomColor() {
-    int rand = (int)Math.ceil(Math.random() * 10.0D);
-    switch (rand) {
-    case 1:
-      return "red";
-    case 2:
-      return "orange";
-    case 3:
-      return "light green";
-    case 4:
-      return "clear";
-    case 5:
-      return "dark green";
-    case 6:
-      return "yellow";
-    case 7:
-      return "pink";
-    case 8:
-      return "purple";
-    case 9:
-      return "light blue";
-    case 10:
-      return "dark blue";
-    }
-    return "white";
   }
 }
