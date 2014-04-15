@@ -3,6 +3,8 @@ package passaj;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.util.List;
+import java.util.ArrayList;
 import javax.swing.JPanel;
 
 public class BoardPanel extends JPanel
@@ -21,7 +23,9 @@ public class BoardPanel extends JPanel
 	private int myPlayerCount;
 	private String myBoardType;
 	private Color[] myColors;
-	private int[][] myBoard;
+	private int[] xs;
+	private int[] ys;
+	private List<int[]> walls;
 
 	public BoardPanel()
 	{
@@ -31,7 +35,7 @@ public class BoardPanel extends JPanel
 		initialize();
 	}
 
-	public BoardPanel(String[] colors, String boardType, int boardSize, int[][] board)
+	public BoardPanel(String[] colors, String boardType, int boardSize, int[] xs, int[] ys)
 	{
 		this.myPlayerCount = colors.length;
 		this.myColors = new Color[colors.length];
@@ -40,7 +44,8 @@ public class BoardPanel extends JPanel
 
 		this.myBoardType = boardType;
 		this.myBoardSize = boardSize;
-		this.myBoard = board;
+		this.xs = xs;
+		this.ys = ys;
 
 		initialize();
 	}
@@ -59,6 +64,7 @@ public class BoardPanel extends JPanel
 			this.myWallWidth = 135 / this.myBoardSize;
 			this.myPieceDiameter = this.myBlockWidth - this.myWallWidth;
 		}
+		this.walls = new ArrayList<int[]>();
 
     setPreferredSize(new Dimension(this.myWidth, this.myWidth));
     setBackground(Color.gray);
@@ -84,17 +90,27 @@ public class BoardPanel extends JPanel
 
 	public void paintBlocks(Graphics pen)
 	{
-   	for (int i = 0; i <= this.myBoardSize - 1; i++) {
-      for (int j = 0; j <= this.myBoardSize - 1; j++) {
-        pen.setColor(Color.lightGray);
-        paintBlock(pen, this.myWidth * i / this.myBoardSize + this.myWallWidth / 2 - 1, 
-          this.myWidth * j / this.myBoardSize + this.myWallWidth / 2 - 1, this.myBlockWidth + 2);
-        if ((j == 0) || (j == this.myBoardSize - 1) || ((this.myPlayerCount == 4) && ((i == 0) || (i == this.myBoardSize - 1))))
+   	for (int i = 0; i < this.myBoardSize; i++)
+		{
+      for (int j = 0; j < this.myBoardSize; j++)
+			{
+				int x = convertToPix(i * 2, this.myWallWidth / 2);
+				int y = convertToPix(j * 2, this.myWallWidth / 2);
+
+				// Lighter square first, for a border
+				pen.setColor(Color.lightGray);
+        paintBlock(pen, x - 1, y - 1, this.myBlockWidth + 2);
+
+				// If it's a goal row, make it slighty lighter than the rest
+        if (j == 0
+						|| j == this.myBoardSize - 1
+						|| this.myPlayerCount == 4
+							&& (i == 0 || i == this.myBoardSize - 1))
           pen.setColor(Color.darkGray);
         else
           pen.setColor(Color.black);
-        paintBlock(pen, this.myWidth * i / this.myBoardSize + this.myWallWidth / 2, 
-          this.myWidth * j / this.myBoardSize + this.myWallWidth / 2, this.myBlockWidth);
+
+        paintBlock(pen, x, y, this.myBlockWidth);
       }
     }
 	}
@@ -106,10 +122,11 @@ public class BoardPanel extends JPanel
 
   public void paintPieces(Graphics pen)
   {
+		int adjust = -this.myPieceDiameter / 2;
     for (int piece = 0; piece < this.myPlayerCount; piece++)
 		{
-			int x = convertToPix(getColumn(piece));
-			int y = convertToPix(getRow(piece));
+			int x = convertToPix(this.xs[piece], adjust);
+			int y = convertToPix(this.ys[piece], adjust);
 			int width = this.myPieceDiameter;
 
 			// Add a white border by painting a slightly bigger piece
@@ -121,36 +138,33 @@ public class BoardPanel extends JPanel
 		}
   }
 
-	public int convertToPix(int pos)
+	public int convertToPix(int pos, int adjust)
 	{
-		int adjust = this.myWallWidth / 2
-			+ this.myBlockWidth / 2
-			- this.myPieceDiameter / 2
-			- 1;
-		return this.myWidth * (pos / 2) / this.myBoardSize + adjust; 
+		return this.myWidth * pos / (2 * this.myBoardSize) + adjust; 
 	}
 
   public void paintWalls(Graphics pen)
   {
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++)
-      for (int j = 1; j <= 2 * this.myBoardSize - 1; j++)
-        if ((this.myBoard[i][j] == 6) || (this.myBoard[i][j] == 7) || (this.myBoard[i][j] == 8)) {
-          if (this.myBoard[i][j] == 6)
-            pen.setColor(BoardPanel.WallColor);
-          if (this.myBoard[i][j] == 7)
-            pen.setColor(BoardPanel.TempWallColor);
-          if (this.myBoard[i][j] == 8)
-            pen.setColor(Color.red);
-          if ((isEven(i)) && (!isEven(j)))
-            pen.fillRect(this.myWidth * (i / 2) / this.myBoardSize - this.myWallWidth / 2, this.myWidth * ((j - 1) / 2) / this.myBoardSize + 
-              this.myWallWidth / 2 - 2, this.myWallWidth - 2, this.myBlockWidth + 4);
-          if ((!isEven(i)) && (isEven(j)))
-            pen.fillRect(this.myWidth * ((i - 1) / 2) / this.myBoardSize + this.myWallWidth / 2 - 2, this.myWidth * (j / 2) / 
-              this.myBoardSize - this.myWallWidth / 2, this.myBlockWidth + 4, this.myWallWidth - 2);
-          if ((isEven(i)) && (isEven(j)))
-            pen.fillRect(this.myWidth * (i / 2) / this.myBoardSize - this.myWallWidth / 2, this.myWidth * (j / 2) / this.myBoardSize - 
-              this.myWallWidth / 2, this.myWallWidth - 2, this.myWallWidth - 2);
-        }
+		pen.setColor(BoardPanel.WallColor);
+
+		int width = this.myWallWidth;
+		int height = this.myBlockWidth + this.myWallWidth;
+		int adjust = -this.myWallWidth / 2;
+		for (int[] wall : this.walls)
+		{
+			if (wall[2] == 1)
+			{
+				int x = this.convertToPix(wall[0], adjust);
+				int y = this.convertToPix(wall[1] - 1, adjust);
+				pen.fillRect(x, y, width, height);
+			}
+			else
+			{
+				int x = this.convertToPix(wall[0] - 1, adjust);
+				int y = this.convertToPix(wall[1], adjust);
+				pen.fillRect(x, y, height, width);
+			}
+		}
   }
 
 	public void paintHexBlocks(Graphics pen)
@@ -192,9 +206,10 @@ public class BoardPanel extends JPanel
 	public void paintHexPieces(Graphics pen)
 	{
 		int width = (this.myRadius - this.myWallWidth) * 2;
+		int adjust = -this.myRadius + this.myWallWidth;
     for (int piece = 0; piece < this.myPlayerCount; piece++) {
-			int x = convertToHexPix(getColumn(piece));
-			int y = convertToHexPix(getRow(piece) + 1);
+			int x = convertToPix(this.xs[piece], adjust);
+			int y = convertToPix(this.ys[piece] + 1, adjust);
 
 			// For a white border, just draw the same thing
 			// slightly bigger and underneath the other.
@@ -205,82 +220,65 @@ public class BoardPanel extends JPanel
     }
 	}
 
-	public int convertToHexPix(int pos)
-	{
-		int adjust = -this.myRadius + this.myWallWidth - 1;
-		return (this.myWidth / (2 * this.myBoardSize)) * pos + adjust;
-	}
-
 	public void paintHexWalls(Graphics pen)
+	{
+    pen.setColor(BoardPanel.WallColor);
+		for (int[] wall : this.walls)
+			paintHexWall(pen, wall[0], wall[1]);
+    repaint();
+  }
+
+	public void paintHexWall(Graphics pen, int x, int y)
 	{
 		int[] xpos = new int[6];
     int[] ypos = new int[6];
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 0; j <= 2 * this.myBoardSize; j += 2) {
-        if ((this.myBoard[i][j] == 8) || (this.myBoard[i][j] == 9) || (this.myBoard[i][j] == 10)) {
-          if (this.myBoard[i][j] == 8)
-            pen.setColor(BoardPanel.WallColor);
-          if (this.myBoard[i][j] == 9)
-            pen.setColor(BoardPanel.TempWallColor);
-          if (this.myBoard[i][j] == 10)
-            pen.setColor(Color.red);
-          if (((isEven(i)) && (!isEven(j / 2))) || ((!isEven(i)) && (isEven(j / 2)))) {
-            xpos[0] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[1] = (this.myWidth * i / (2 * this.myBoardSize) + this.myWallWidth / 3);
-            xpos[2] = (this.myWidth * (i + 1) / (2 * this.myBoardSize));
-            xpos[3] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[4] = (this.myWidth * (i - 1) / (2 * this.myBoardSize));
-            xpos[5] = (this.myWidth * i / (2 * this.myBoardSize) - this.myWallWidth / 3);
-            ypos[0] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 1.5D) * 
-              Math.sin(1.047197551196598D)));
-            ypos[1] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-            ypos[2] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[3] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 2) * 
-              Math.sin(1.047197551196598D)));
-            ypos[4] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[5] = 
-              ((int)((this.myWidth * j / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-          } else {
-            xpos[0] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[1] = (this.myWidth * i / (2 * this.myBoardSize) + this.myWallWidth / 3);
-            xpos[2] = (this.myWidth * (i + 1) / (2 * this.myBoardSize));
-            xpos[3] = (this.myWidth * i / (2 * this.myBoardSize));
-            xpos[4] = (this.myWidth * (i - 1) / (2 * this.myBoardSize));
-            xpos[5] = (this.myWidth * i / (2 * this.myBoardSize) - this.myWallWidth / 3);
-            ypos[0] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 1.5D) * 
-              Math.sin(1.047197551196598D)));
-            ypos[1] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-            ypos[2] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[3] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 2) * 
-              Math.sin(1.047197551196598D)));
-            ypos[4] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-              Math.sin(1.047197551196598D)));
-            ypos[5] = 
-              ((int)((this.myWidth * (j + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-              Math.sin(1.047197551196598D)));
-          }
-          pen.fillPolygon(xpos, ypos, 6);
-        }
-      }
-    }
-    repaint();
-  }
+		xpos[0] = convertToPix(x, 0);
+		xpos[1] = convertToPix(x, this.myWallWidth / 3);
+		xpos[2] = convertToPix(x + 1, 0);
+		xpos[3] = convertToPix(x, 0);
+		xpos[4] = convertToPix(x - 1, 0);
+		xpos[5] = convertToPix(x, -this.myWallWidth / 3);
+		if (((isEven(x)) && (!isEven(y / 2))) || ((!isEven(x)) && (isEven(y / 2)))) {
+			ypos[0] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 1.5D) * 
+				Math.sin(1.047197551196598D)));
+			ypos[1] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
+				Math.sin(1.047197551196598D)));
+			ypos[2] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
+				Math.sin(1.047197551196598D)));
+			ypos[3] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 2) * 
+				Math.sin(1.047197551196598D)));
+			ypos[4] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
+				Math.sin(1.047197551196598D)));
+			ypos[5] = 
+				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
+				Math.sin(1.047197551196598D)));
+		} else {
+			ypos[0] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 1.5D) * 
+				Math.sin(1.047197551196598D)));
+			ypos[1] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
+				Math.sin(1.047197551196598D)));
+			ypos[2] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
+				Math.sin(1.047197551196598D)));
+			ypos[3] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 2) * 
+				Math.sin(1.047197551196598D)));
+			ypos[4] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
+				Math.sin(1.047197551196598D)));
+			ypos[5] = 
+				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
+				Math.sin(1.047197551196598D)));
+		}
+		pen.fillPolygon(xpos, ypos, 6);
+	}
 
 	/**
 	 * Interpret a mouse location as a position on the board.
@@ -360,31 +358,15 @@ public class BoardPanel extends JPanel
 		return number % 2 == 0;
 	}
 
-	public void setBoard(int[][] board)
+	public void setPos(int[] xs, int[] ys)
 	{
-		this.myBoard = board;
+		this.xs = xs;
+		this.ys = ys;
 	}
 
-  public int getRow(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 1; j <= 2 * this.myBoardSize; j++) {
-        if (this.myBoard[i][j] == piece + 1)
-          return j;
-      }
-    }
-    throw new IllegalArgumentException("piece " + piece + " doesn't exist");
-  }
-
-  public int getColumn(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 1; j <= 2 * this.myBoardSize; j++) {
-        if (this.myBoard[i][j] == piece + 1)
-          return i;
-      }
-    }
-    throw new IllegalArgumentException("piece " + piece + " doesn't exist");
-  }
+	public void addWall(int[] wall)
+	{
+		this.walls.add(wall);
+	}
 }
 

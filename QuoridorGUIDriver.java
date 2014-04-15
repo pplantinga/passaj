@@ -48,20 +48,22 @@ public class QuoridorGUIDriver extends JFrame
 		this.boardSize = size;
 		this.compLevel = compLevel;
 		this.myType = type;
-		int[][] board;
 
 		if (type == "hexagonal")
 		{
 			this.myHexBoard = new HexBoard(this.playerCount, size, compLevel);
-			board = this.myHexBoard.getBoard();
+			int[] xs = {this.myHexBoard.getColumn(1), this.myHexBoard.getColumn(2)};
+			int[] ys = {this.myHexBoard.getRow(1), this.myHexBoard.getRow(2)};
+			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
 		}
 		else
 		{
 			this.myBoard = new Board(this.playerCount, size, compLevel);
-			board = this.myBoard.getBoard();
+			int[] xs = {this.myBoard.getColumn(1), this.myBoard.getColumn(2)};
+			int[] ys = {this.myBoard.getRow(1), this.myBoard.getRow(2)};
+			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
 		}
 		
-		this.myBoardPanel = new BoardPanel(colors, type, size, board);
 
     initialize();
   }
@@ -161,8 +163,9 @@ public class QuoridorGUIDriver extends JFrame
 				int x = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "x");
 				int y = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "y");
 				this.myHexBoard.move(x, y);
-				int[][] board = this.myHexBoard.getBoard();
-				this.myBoardPanel.setBoard(board);
+				int[] xs = {this.myHexBoard.getColumn(1), this.myHexBoard.getColumn(2)};
+				int[] ys = {this.myHexBoard.getRow(1), this.myHexBoard.getRow(2)};
+				this.myBoardPanel.setPos(xs, ys);
 				this.myBoardPanel.repaint();
 				
 				if (compLevel != 0)
@@ -197,8 +200,9 @@ public class QuoridorGUIDriver extends JFrame
 				boolean yhalf = this.myBoardPanel.isTopLeftHalf(e.getY());
 				this.myBoard.move(x, y, xhalf, yhalf);
 
-				int[][] board = this.myBoard.getBoard();
-				this.myBoardPanel.setBoard(board);
+				int[] xs = {this.myBoard.getColumn(1), this.myBoard.getColumn(2)};
+				int[] ys = {this.myBoard.getRow(1), this.myBoard.getRow(2)};
+				this.myBoardPanel.setPos(xs, ys);
         this.myBoardPanel.repaint();
 
         if (this.compLevel != 0)
