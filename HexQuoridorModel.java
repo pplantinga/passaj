@@ -2,7 +2,7 @@ package passaj;
 
 import java.util.ArrayList;
 
-public class HexBoard
+public class HexQuoridorModel
 {
   private int[][] myHexBoard;
   private int[][] testBoard;
@@ -17,7 +17,7 @@ public class HexBoard
   private IllegalArgumentException wallFilled;
   private IllegalArgumentException blockException;
 
-  public HexBoard()
+  public HexQuoridorModel()
   {
     this.myBoardSize = 9;
     this.myPlayers = 2;
@@ -31,22 +31,22 @@ public class HexBoard
     this.myHexBoard[this.myBoardSize][(2 * this.myBoardSize - 1)] = 2;
   }
 
-  public HexBoard(HexBoard board) {
-    this.myBoardSize = board.getBoardSize();
-    this.myPlayers = board.getPlayers();
+  public HexQuoridorModel(HexQuoridorModel model) {
+    this.myBoardSize = model.getBoardSize();
+    this.myPlayers = model.getPlayers();
     initialize();
-    this.myCompLevel = board.getCompLevel();
+    this.myCompLevel = model.getCompLevel();
 
     this.myWallCount = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCount[i] = board.getWallCount(i + 1);
+      this.myWallCount[i] = model.getWallCount(i + 1);
     }
 
-    this.myTurn = board.getTurn();
-    this.myHexBoard = deepCopy(board.getBoard());
+    this.myTurn = model.getTurn();
+    this.myHexBoard = deepCopy(model.getBoard());
   }
 
-  public HexBoard(int players, int size, int compLevel)
+  public HexQuoridorModel(int players, int size, int compLevel)
   {
     this.myBoardSize = size;
     this.myPlayers = players;
@@ -482,13 +482,13 @@ public class HexBoard
         changePos(path.get(2), path.get(3));
       }
     } else if (this.myCompLevel == 4) {
-      double[] move = compmove(new HexBoard(this), 2);
+      double[] move = compmove(new HexQuoridorModel(this), 2);
       if (!isEven((int)move[1]))
         changePos((int)move[0], (int)move[1]);
       else
         addWall(8, (int)move[0], (int)move[1], false);
     } else if (this.myCompLevel == 5) {
-      double[] move = compmove(new HexBoard(this), 3);
+      double[] move = compmove(new HexQuoridorModel(this), 3);
       if (!isEven((int)move[1]))
         changePos((int)move[0], (int)move[1]);
       else
@@ -496,24 +496,24 @@ public class HexBoard
     }
   }
 
-  public double[] compmove(HexBoard board, int iteration) {
-    ArrayList<Integer> path1 = board.shortPath(1);
-    ArrayList<Integer> path2 = board.shortPath(2);
+  public double[] compmove(HexQuoridorModel model, int iteration) {
+    ArrayList<Integer> path1 = model.shortPath(1);
+    ArrayList<Integer> path2 = model.shortPath(2);
 
     if ((path1.size() == 4) || (path2.size() == 4) || (iteration == 0)) {
       return new double[] { path2.get(2), path2.get(3), 
-        evaluate(path1.size() / 2, path2.size() / 2, board.getWallCount(1), board.getWallCount(2)) };
+        evaluate(path1.size() / 2, path2.size() / 2, model.getWallCount(1), model.getWallCount(2)) };
     }
     int x = 0; int y = 0;
-    if (board.getPlayer() == 2) {
+    if (model.getPlayer() == 2) {
       double value = 0.0D; double maxValue = -100.0D;
       for (int i = 2 * this.myBoardSize - 2; i >= 2; i--) {
         for (int j = 2 * this.myBoardSize - 2; j >= 2; j -= 2) {
-          if ((board.checkWall(8, i, j, true)) && (board.getWallCount(2) > 0))
+          if ((model.checkWall(8, i, j, true)) && (model.getWallCount(2) > 0))
           {
-            HexBoard b1 = new HexBoard(board);
-            b1.addWall(8, i, j, false);
-            value = compmove(b1, iteration - 1)[2];
+            HexQuoridorModel m1 = new HexQuoridorModel(model);
+            m1.addWall(8, i, j, false);
+            value = compmove(m1, iteration - 1)[2];
 
             for (int k = 0; k < path1.size() - 3; k += 2) {
               if ((((path1.get(k) + path1.get(k + 2)) / 2 == i) && (
@@ -522,7 +522,7 @@ public class HexBoard
                 ((path1.get(k + 1) + path1.get(k + 3)) / 2 == j)))
                 value += 0.0001D;
             }
-            value -= (Math.abs(board.getColumn(1) - i) + Math.abs(board.getColumn(2) - j)) / 10000.0D;
+            value -= (Math.abs(model.getColumn(1) - i) + Math.abs(model.getColumn(2) - j)) / 10000.0D;
             if (value > maxValue) {
               x = i;
               y = j;
@@ -533,9 +533,9 @@ public class HexBoard
       }
 
       int i = path2.get(2); int j = path2.get(3);
-      HexBoard b1 = new HexBoard(board);
-      b1.changePos(i, j);
-      value = compmove(b1, iteration - 1)[2];
+      HexQuoridorModel m1 = new HexQuoridorModel(model);
+      m1.changePos(i, j);
+      value = compmove(m1, iteration - 1)[2];
       if (value >= maxValue) {
         x = i;
         y = j;
@@ -546,11 +546,11 @@ public class HexBoard
     double value = 0.0D; double minValue = 100.0D;
     for (int i = 2 * this.myBoardSize - 2; i >= 2; i--) {
       for (int j = 2 * this.myBoardSize - 2; j >= 2; j -= 2) {
-        if ((board.checkWall(8, i, j, true)) && (board.getWallCount(1) > 0))
+        if ((model.checkWall(8, i, j, true)) && (model.getWallCount(1) > 0))
         {
-          HexBoard b1 = new HexBoard(board);
-          b1.addWall(8, i, j, false);
-          value = compmove(b1, iteration - 1)[2];
+          HexQuoridorModel m1 = new HexQuoridorModel(model);
+          m1.addWall(8, i, j, false);
+          value = compmove(m1, iteration - 1)[2];
 
           for (int k = 0; k < path2.size() - 3; k += 2) {
             if ((((path2.get(k) + path2.get(k + 2)) / 2 == i) && (
@@ -559,7 +559,7 @@ public class HexBoard
               ((path2.get(k + 1) + path2.get(k + 3)) / 2 == j)))
               value -= 0.0001D;
           }
-          value += (Math.abs(board.getColumn(2) - i) + Math.abs(board.getRow(2) - j)) / 10000.0D;
+          value += (Math.abs(model.getColumn(2) - i) + Math.abs(model.getRow(2) - j)) / 10000.0D;
           if (value < minValue) {
             x = i;
             y = j;
@@ -569,9 +569,9 @@ public class HexBoard
       }
     }
     int i = path1.get(2); int j = path1.get(3);
-    HexBoard b1 = new HexBoard(board);
-    b1.changePos(i, j);
-    value = compmove(b1, iteration - 1)[2];
+    HexQuoridorModel m1 = new HexQuoridorModel(model);
+    m1.changePos(i, j);
+    value = compmove(m1, iteration - 1)[2];
     if (value < minValue) {
       x = i;
       y = j;

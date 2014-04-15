@@ -22,8 +22,8 @@ public class QuoridorGUIDriver extends JFrame
   private JButton ruleButton;
   private JButton quitButton;
   private JPanel myPanel;
-  private Board myBoard;
-  private HexBoard myHexBoard;
+  private QuoridorModel myModel;
+  private HexQuoridorModel myHexModel;
 	private BoardPanel myBoardPanel;
   private String myType;
 	private String[] myNames;
@@ -35,7 +35,7 @@ public class QuoridorGUIDriver extends JFrame
 
   public QuoridorGUIDriver()
 	{
-    this.myBoard = new Board();
+    this.myModel = new QuoridorModel();
     this.myType = "default";
     initialize();
   }
@@ -51,16 +51,16 @@ public class QuoridorGUIDriver extends JFrame
 
 		if (type == "hexagonal")
 		{
-			this.myHexBoard = new HexBoard(this.playerCount, size, compLevel);
-			int[] xs = {this.myHexBoard.getColumn(1), this.myHexBoard.getColumn(2)};
-			int[] ys = {this.myHexBoard.getRow(1), this.myHexBoard.getRow(2)};
+			this.myHexModel = new HexQuoridorModel(this.playerCount, size, compLevel);
+			int[] xs = {this.myHexModel.getColumn(1), this.myHexModel.getColumn(2)};
+			int[] ys = {this.myHexModel.getRow(1), this.myHexModel.getRow(2)};
 			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
 		}
 		else
 		{
-			this.myBoard = new Board(this.playerCount, size, compLevel);
-			int[] xs = {this.myBoard.getColumn(1), this.myBoard.getColumn(2)};
-			int[] ys = {this.myBoard.getRow(1), this.myBoard.getRow(2)};
+			this.myModel = new QuoridorModel(this.playerCount, size, compLevel);
+			int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
+			int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
 			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
 		}
 		
@@ -162,24 +162,24 @@ public class QuoridorGUIDriver extends JFrame
       {
 				int x = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "x");
 				int y = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "y");
-				this.myHexBoard.move(x, y);
-				int[] xs = {this.myHexBoard.getColumn(1), this.myHexBoard.getColumn(2)};
-				int[] ys = {this.myHexBoard.getRow(1), this.myHexBoard.getRow(2)};
+				this.myHexModel.move(x, y);
+				int[] xs = {this.myHexModel.getColumn(1), this.myHexModel.getColumn(2)};
+				int[] ys = {this.myHexModel.getRow(1), this.myHexModel.getRow(2)};
 				this.myBoardPanel.setPos(xs, ys);
 				this.myBoardPanel.repaint();
 				
 				if (compLevel != 0)
-					this.myHexBoard.moveComp(2);
+					this.myHexModel.moveComp(2);
 
         String fieldText = "";
         for (int i = 0; i < this.playerCount; i++)
 				{
           fieldText += this.myNames[i] + " ";
-					fieldText += this.myHexBoard.getWallCount(i) + " ";
+					fieldText += this.myHexModel.getWallCount(i) + " ";
 				}
 
         fieldText += "  walls left. Player's Turn: "
-					+ this.myNames[this.myHexBoard.getPlayer() - 1];
+					+ this.myNames[this.myHexModel.getPlayer() - 1];
 
         this.myField.setText(fieldText);
       }
@@ -198,23 +198,23 @@ public class QuoridorGUIDriver extends JFrame
 				int y = this.myBoardPanel.pixToPos(e.getY());
 				boolean xhalf = this.myBoardPanel.isTopLeftHalf(e.getX());
 				boolean yhalf = this.myBoardPanel.isTopLeftHalf(e.getY());
-				this.myBoard.move(x, y, xhalf, yhalf);
+				this.myModel.move(x, y, xhalf, yhalf);
 
-				int[] xs = {this.myBoard.getColumn(1), this.myBoard.getColumn(2)};
-				int[] ys = {this.myBoard.getRow(1), this.myBoard.getRow(2)};
+				int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
+				int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
 				this.myBoardPanel.setPos(xs, ys);
         this.myBoardPanel.repaint();
 
         if (this.compLevel != 0)
-          this.myBoard.moveComp(2);
+          this.myModel.moveComp(2);
 
         String fieldText = "";
 				for (int i = 0; i < this.playerCount; i++)
           fieldText += this.myNames[i] + " "
-						+ this.myBoard.getWallCount(i) + " ";
+						+ this.myModel.getWallCount(i) + " ";
 
         fieldText += "  walls left.  Player's Turn: "
-					+ this.myNames[this.myBoard.getPlayer()];
+					+ this.myNames[this.myModel.getPlayer()];
         this.myField.setText(fieldText);
       }
       catch (Exception ex)

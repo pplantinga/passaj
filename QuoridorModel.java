@@ -2,7 +2,7 @@ package passaj;
 
 import java.util.ArrayList;
 
-public class Board
+public class QuoridorModel
 {
   private int[][] myBoard;
   private int[][] testBoard;
@@ -17,7 +17,7 @@ public class Board
   private IllegalArgumentException blockException;
   private boolean compPlay;
 
-  public Board()
+  public QuoridorModel()
   {
     this.myBoardSize = 9;
     this.myPlayers = 2;
@@ -28,7 +28,7 @@ public class Board
     initialize();
   }
 
-  public Board(Board board) {
+  public QuoridorModel(QuoridorModel board) {
     this.myBoardSize = board.getBoardSize();
     this.myPlayers = board.getPlayers();
     this.myCompLevel = board.getCompLevel();
@@ -43,7 +43,7 @@ public class Board
     this.myTurn = board.getTurn();
   }
 
-  public Board(int playerCount, int size, int compLevel)
+  public QuoridorModel(int playerCount, int size, int compLevel)
   {
     this.myBoardSize = size;
 		this.myPlayers = playerCount;
@@ -414,7 +414,7 @@ public class Board
           for (int j = 2 * this.myBoardSize - 1; j >= 1; j--) {
             if (((isHorizontal(i, j)) && (checkWall(i, j, true, true) == -1)) || ((isVertical(i, j)) && 
               (checkWall(i, j, true, true) == -1))) {
-              Board b1 = new Board(this);
+              QuoridorModel b1 = new QuoridorModel(this);
               b1.addWall(6, i, j, true);
               path1 = b1.shorterPath(1);
               path2 = b1.shorterPath(player);
@@ -437,7 +437,7 @@ public class Board
 
     }
     else if (this.myCompLevel == 4) {
-      double[] move = compmove(new Board(this), 2);
+      double[] move = compmove(new QuoridorModel(this), 2);
       if ((!isEven((int)move[0])) && (!isEven((int)move[1])))
         changePos((int)move[0], (int)move[1]);
       else {
@@ -445,7 +445,7 @@ public class Board
       }
     }
     else if (this.myCompLevel == 5) {
-      double[] move = compmove(new Board(this), 3);
+      double[] move = compmove(new QuoridorModel(this), 3);
       if ((!isEven((int)move[0])) && (!isEven((int)move[1])))
         changePos((int)move[0], (int)move[1]);
       else
@@ -453,24 +453,24 @@ public class Board
     }
   }
 
-  public double[] compmove(Board board, int iteration) {
-    ArrayList<Integer> path1 = board.shorterPath(1);
-    ArrayList<Integer> path2 = board.shorterPath(2);
+  public double[] compmove(QuoridorModel model, int iteration) {
+    ArrayList<Integer> path1 = model.shorterPath(1);
+    ArrayList<Integer> path2 = model.shorterPath(2);
 
     if (path1.size() == 4 || path2.size() == 4 || iteration == 0) {
       return new double[] { path2.get(2), path2.get(3), 
-        evaluate(path1.size() / 2, path2.size() / 2, board.getWallCount(1), board.getWallCount(2)) };
+        evaluate(path1.size() / 2, path2.size() / 2, model.getWallCount(1), model.getWallCount(2)) };
     }
     int x = 0; int y = 0;
-    if (board.getPlayer() == 2) {
+    if (model.getPlayer() == 2) {
       double value = 0.0D; double maxValue = -100.0D;
       for (int i = 2 * this.myBoardSize - 1; i >= 2; i--) {
         for (int j = 2; j <= 2 * this.myBoardSize - 1; j++) {
-          if (((isHorizontal(i, j)) && (board.checkWall(i, j, true, true) == -1)) || (
+          if (((isHorizontal(i, j)) && (model.checkWall(i, j, true, true) == -1)) || (
             (isVertical(i, j)) && 
-            (board.checkWall(i, j, true, true) == -1) && 
-            (board.getWallCount(2) > 0))) {
-            Board b1 = new Board(board);
+            (model.checkWall(i, j, true, true) == -1) && 
+            (model.getWallCount(2) > 0))) {
+            QuoridorModel b1 = new QuoridorModel(model);
             b1.addWall(6, i, j, true);
             value = compmove(b1, iteration - 1)[2];
 
@@ -490,7 +490,7 @@ public class Board
       }
       int i = path2.get(2);
 			int j = path2.get(3);
-      Board b1 = new Board(board);
+      QuoridorModel b1 = new QuoridorModel(model);
       b1.changePos(i, j);
       value = compmove(b1, iteration - 1)[2];
       if (value > maxValue) {
@@ -503,12 +503,12 @@ public class Board
     double value = 0.0D; double minValue = 100.0D;
     for (int i = 2 * this.myBoardSize - 1; i >= 2; i--) {
       for (int j = 2; j <= 2 * this.myBoardSize - 1; j++) {
-        if (((isHorizontal(i, j)) && (board.checkWall(i, j, true, true) == -1)) || (
+        if (((isHorizontal(i, j)) && (model.checkWall(i, j, true, true) == -1)) || (
           (isVertical(i, j)) && 
-          (board.checkWall(i, j, true, true) == -1) && 
-          (board.getWallCount(1) > 0)))
+          (model.checkWall(i, j, true, true) == -1) && 
+          (model.getWallCount(1) > 0)))
         {
-          Board b1 = new Board(board);
+          QuoridorModel b1 = new QuoridorModel(model);
           b1.addWall(6, i, j, true);
           value = compmove(b1, iteration - 1)[2];
 
@@ -528,7 +528,7 @@ public class Board
     }
     int i = path1.get(2);
 		int j = path1.get(3);
-    Board b1 = new Board(board);
+    QuoridorModel b1 = new QuoridorModel(model);
     b1.changePos(i, j);
     value = compmove(b1, iteration - 1)[2];
     if (value < minValue) {
