@@ -1,57 +1,75 @@
 package passaj;
 
 import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
 
+/**
+ * QuoridorModel encapsulates all the logic relating to a game of Quoridor.
+ */
 public class QuoridorModel
 {
+	private static final int WALL_VALUE = 5;
   private int[][] myBoard;
-  private int[][] testBoard;
-  private int[] myWallCount;
+  private int[] myWallCounts;
+	private int[] myXs;
+	private int[] myYs;
+	private int[] pathLengths;
+	private int[] myOpenings;
   private int myTurn;
   private int myBoardSize;
   private int myPlayers;
-  private int myCompLevel;
   private int myWallNumber;
   private IllegalArgumentException wallException;
   private IllegalArgumentException wallFilled;
   private IllegalArgumentException blockException;
-  private boolean compPlay;
+	private List<int[]> moves;
+	private boolean[][] wallsInPath;
 
   public QuoridorModel()
   {
     this.myBoardSize = 9;
     this.myPlayers = 2;
-    this.myCompLevel = 0;
     this.myWallNumber = numberOfWalls(9, 2);
-    this.myWallCount = new int[] { this.myWallNumber, this.myWallNumber };
+    this.myWallCounts = new int[] { this.myWallNumber, this.myWallNumber };
 
     initialize();
   }
 
-  public QuoridorModel(QuoridorModel board) {
-    this.myBoardSize = board.getBoardSize();
-    this.myPlayers = board.getPlayers();
-    this.myCompLevel = board.getCompLevel();
+	/**
+	 * Dupicates an instance of a quoridor model.
+	 */
+  public QuoridorModel(QuoridorModel m) {
+    this.myBoardSize = m.myBoardSize;
+    this.myPlayers = m.myPlayers;
+		this.myWallNumber = m.myWallNumber;
 
-    this.myWallCount = new int[this.myPlayers];
+    this.myWallCounts = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCount[i] = board.getWallCount(i + 1);
+      this.myWallCounts[i] = m.myWallCounts[i];
     }
 
     initialize();
-    this.myBoard = deepCopy(board.getBoard());
-    this.myTurn = board.getTurn();
+    this.myBoard = deepCopy(m.myBoard);
+    this.myTurn = m.myTurn;
   }
 
-  public QuoridorModel(int playerCount, int size, int compLevel)
+	/**
+	 * Initialize a model with parameters.
+	 *
+	 * Params
+	 * 	 playerCount = number of players in the game: 2 or 4
+	 * 	 size = size of the board (default 9)
+	 */
+  public QuoridorModel(int playerCount, int size)
   {
     this.myBoardSize = size;
 		this.myPlayers = playerCount;
-		this.myCompLevel = compLevel;
    	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
-    this.myWallCount = new int[this.myPlayers];
+
+    this.myWallCounts = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCount[i] = this.myWallNumber;
+      this.myWallCounts[i] = this.myWallNumber;
     }
 
     initialize();
@@ -65,535 +83,974 @@ public class QuoridorModel
 		return (int)Math.round(Math.pow(boardSize - 1, 2.0) * 5.0/16.0/players);
 	}
 
+	/**
+	 * Set all internal variables to their initial values.
+	 */
   public void initialize()
   {
-    this.myTurn = 1;
+    this.myTurn = 0;
 
-    this.wallException = new IllegalArgumentException("There is a wall between where you are and where you want to be.");
-    this.wallFilled = new IllegalArgumentException("There is a wall already there!");
-    this.blockException = new IllegalArgumentException("You may not block anybody from getting to their goal row");
+		// Exceptions
+    this.wallException = new IllegalArgumentException(
+			"There is a wall between where you are and where you want to be.");
+    this.wallFilled = new IllegalArgumentException(
+			"There is a wall already there!");
+    this.blockException = new IllegalArgumentException(
+			"You may not block anybody from getting to their goal row");
 
-    this.myBoard = new int[2 * this.myBoardSize + 1][2 * this.myBoardSize + 1];
-    if (!isEven(this.myBoardSize)) {
-      this.myBoard[this.myBoardSize][1] = 1;
-      this.myBoard[this.myBoardSize][(2 * this.myBoardSize - 1)] = 2;
-      if (this.myPlayers == 4) {
-        this.myBoard[(2 * this.myBoardSize - 1)][this.myBoardSize] = 3;
-        this.myBoard[1][this.myBoardSize] = 4;
-      }
-    } else {
-      this.myBoard[(this.myBoardSize + 1)][1] = 1;
-      this.myBoard[(this.myBoardSize - 1)][(2 * this.myBoardSize - 1)] = 2;
-      if (this.myPlayers == 4) {
-        this.myBoard[(2 * this.myBoardSize - 1)][(this.myBoardSize + 1)] = 3;
-        this.myBoard[1][(this.myBoardSize - 1)] = 4;
-      }
+		// Initialize the board
+		int half = this.myBoardSize - 1;
+    this.myBoard = new int[2 * half + 1][2 * half + 1];
 
+		// Put pieces in appropriate starting locations
+		this.myXs = new int[this.myPlayers];
+		this.myYs = new int[this.myPlayers];
+
+		this.myXs[0] = half;
+		this.myYs[0] = 0;
+		this.myXs[1] = half;
+		this.myYs[1] = 2 * half;
+
+		// Add third and fourth players
+		if (this.myPlayers == 4)
+		{
+			this.myXs[2] = 2 * half;
+			this.myYs[2] = half;
+			this.myXs[3] = 0;
+			this.myYs[3] = half;
+		}
+
+		// If we have an even number of squares, we have to shift one out of
+		// each pair of pieces to make the board rotation-symmetric.
+    if (isEven(this.myBoardSize))
+		{
+			this.myXs[0] += 2;
+
+      if (this.myPlayers == 4)
+				this.myYs[2] += 2;
     }
+		
+		// Put the pieces on the board
+		for (int i = 0; i < this.myPlayers; i++)
+			this.myBoard[this.myXs[i]][this.myYs[i]] = i + 1;
 
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 0; j <= 2 * this.myBoardSize; j++) {
-        if ((i == 0) || (i == 2 * this.myBoardSize) || (j == 0) || (j == 2 * this.myBoardSize)) {
-          this.myBoard[i][j] = 6;
-        }
-      }
-    }
+		// Start list of moves
+		this.moves = new ArrayList<int[]>();
+
+		// Start keeping track of walls in my path.
+		this.wallsInPath = new boolean[(this.myBoardSize - 1) ^ 2 * 2][2];
   }
 
-	public void move(int x, int y, boolean Xhalf, boolean Yhalf)
+	/**
+	 * Public move function.
+	 */
+	public void move(int x, int y, int o)
 	{
-		if (isHorizontal(x, y))
-			addWall(6, x, y, Xhalf);
-		else if (isVertical(x, y))
-			addWall(6, x, y, Yhalf);
-		else if (!isEven(x) && !isEven(y))
-			changePos(x, y);
+		if (o == 0)
+			movePiece(x, y);
+		else
+			placeWall(x, y, o);
 	}
 
-  public void changePos(int x, int y)
-  {
-    int piece = getPlayer();
+	/**
+	 * ai_move uses minimax to decide on a move and take it.
+	 *
+	 * Params:
+	 *   millis = the length of time to search moves in milliseconds
+	 */
+	void ai_move(long millis)
+	{
+		int i = 2;
+		int[] move = new int[] {0, 0, 0};
+		int[] testMove;
+		long t0 = System.currentTimeMillis();
+		QuoridorModel testModel = new QuoridorModel(this);
+		
+		// iterative deepening
+		while (i < 100)
+		{
+			testMove = testModel.negascout(i, -1000, 1000, millis, t0, move);
+			i += 1;
+			if (System.currentTimeMillis() - t0 > millis && i < 100)
+				move = testMove;
+			else
+				break;
+		}
 
-    int k = x;
-    int l = y;
-    int i = getColumn(piece);
-    int j = getRow(piece);
+		// Print the level that we got to
+		System.out.println(i);
+		
+		if (move[2] != 0)
+			if (!placeWall(move[0], move[1], move[2]))
+				throw wallException;
+		else
+			if (!movePiece(move[0], move[1]))
+				throw wallException;
+	}
 
-    if (checkPos(this.myBoard, i, j, k, l, false)) {
-      this.myBoard[i][j] = 0;
-      this.myBoard[k][l] = piece;
-    }
+	/**
+	 * Undo last moves.
+	 *
+	 * Params:
+	 *   n = the number of moves to undo
+	 */
+	void undo(int n)
+	{
+		for (int i = 0; i < n; i++)
+		{
+			int[] move = moves.remove(moves.size() - 1);
+			int x = move[0];
+			int y = move[1];
+			int o = move[2];
 
-    this.myTurn += 1;
+			// update turn
+			this.myTurn -= 1;
+			int turn = this.myTurn % this.myPlayers;
 
-    for (int c = 1; c <= 4; c++)
-      if ((c <= 2) || ((c > 2) && (this.myPlayers == 4))) {
-        int a = getColumn(c);
-        int b = getRow(c);
-        this.testBoard = deepCopy(this.myBoard);
-        if ((!find(this.testBoard, c, a, b)) && (this.myWallCount[(c - 1)] <= 0)) {
-          this.myTurn += 1;
-          throw new IllegalArgumentException("Player " + c + " was skipped because they couldn't move");
-        }
-      }
-  }
+			// undo wall
+			if (o != 0)
+			{
+				int xAdd = o - 1;
+				int yAdd = o % 2;
 
-  public void addWall(int boardNumber, int x, int y, boolean half)
-  {
-    int playerToAdd = getPlayer() - 1;
+				this.myBoard[x][y] = 0;
+				this.myBoard[x + xAdd][y + yAdd] = 0;
+				this.myBoard[x - xAdd][y - yAdd] = 0;
 
-    if (this.myWallCount[playerToAdd] <= 0) {
-      throw new IllegalArgumentException("You are all out of walls");
-    }
+				this.myWallCounts[turn] += 1;
+			}
 
-    if (((isEven(x)) && (isEven(y))) || ((!isEven(x)) && (!isEven(y)))) {
-      throw new IllegalArgumentException("You can't put a wall there");
-    }
+			// undo move
+			else
+			{
+				this.myBoard[x][y] = turn + 1;
+				this.myBoard[this.myXs[turn]][this.myYs[turn]] = 0;
+				this.myXs[turn] = x;
+				this.myYs[turn] = y;
+			}
 
-    if (isVertical(x, y)) {
-      int scaleFactor = checkWall(x, y, half, false);
-      this.myBoard[x][y] = boardNumber;
-      this.myBoard[x][(y + scaleFactor)] = boardNumber;
-      this.myBoard[x][(y + scaleFactor * 2)] = boardNumber;
-    }
+			this.pathLengths = new int[] {this.pathLength(0), pathLength(1)};
+		}
+	}
 
-    if (isHorizontal(x, y)) {
-      int scaleFactor = checkWall(x, y, half, false);
-      this.myBoard[x][y] = boardNumber;
-      this.myBoard[(x + scaleFactor)][y] = boardNumber;
-      this.myBoard[(x + scaleFactor * 2)][y] = boardNumber;
-    }
-    if (boardNumber == 6) {
-      this.myWallCount[playerToAdd] -= 1;
-      this.myTurn += 1;
-    }
-  }
+	/**
+	 * Checks for move legality, and if legal, moves the player
+	 *
+	 * Params:
+	 *   x = the desired horizontal location
+	 *   y = the desired vertical location
+	 *
+	 * Returns: whether or not the move occurred 
+	 */
+	boolean movePiece(int x, int y)
+	{
+		int turn = this.myTurn % this.myPlayers;
+		int oldX = this.myXs[turn];
+		int oldY = this.myYs[turn];
 
-  public int checkWall(int x, int y, boolean half, boolean search)
-  {
-    int xfac = 1; int yfac = 0;
-    if (isVertical(x, y)) {
-      xfac = 0;
-      yfac = 1;
-    }
-    int scalefactor;
-    if (half)
-      scalefactor = 1;
-    else {
-      scalefactor = -1;
-    }
-    if (this.myBoard[x][y] == 6) {
-      if (search) {
-        return 0;
-      }
-      throw this.wallFilled;
-    }if ((x == 1) && (this.myBoard[x][y] != 6) && (this.myBoard[(x + xfac)][(y + yfac)] != 6) && (this.myBoard[(x + 2 * xfac)][(y + 2 * yfac)] != 6))
-      scalefactor = 1;
-    else if ((x == 2 * this.myBoardSize - 1) && (this.myBoard[x][y] != 6) && (this.myBoard[(x - xfac)][(y - yfac)] != 6) && (this.myBoard[(x - 2 * xfac)][(y - 2 * yfac)] != 6))
-      scalefactor = -1;
-    if ((this.myBoard[x][y] == 6) || (
-      ((this.myBoard[(x - xfac)][(y - yfac)] == 6) || (this.myBoard[(x - 2 * xfac)][(y - 2 * yfac)] == 6)) && (
-      (this.myBoard[(x + xfac)][(y + yfac)] == 6) || (this.myBoard[(x + 2 * xfac)][(y + 2 * yfac)] == 6)))) {
-      if (search) {
-        return 0;
-      }
-      throw this.wallFilled;
-    }if (half) {
-      if ((this.myBoard[(x - xfac)][(y - yfac)] != 6) && (this.myBoard[(x - 2 * xfac)][(y - 2 * yfac)] != 6))
-        scalefactor = -1;
-      else
-        scalefactor = 1;
-    } else if ((this.myBoard[(x + xfac)][(y + yfac)] != 6) && (this.myBoard[(x + 2 * xfac)][(y + 2 * yfac)] != 6))
-      scalefactor = 1;
-    else
-      scalefactor = -1;
-    for (int i = 1; i <= this.myPlayers; i++) {
-      int a = getColumn(i);
-      int b = getRow(i);
-      this.testBoard = deepCopy(this.myBoard);
-      this.testBoard[x][y] = 6;
-      this.testBoard[(x + xfac * scalefactor)][(y + yfac * scalefactor)] = 6;
-      this.testBoard[(x + xfac * scalefactor * 2)][(y + yfac * scalefactor * 2)] = 6;
-      if (!find(this.testBoard, i, a, b)) {
-        if (search) {
-          return 0;
-        }
-        this.myBoard[x][y] = 8;
-        this.myBoard[(x + xfac * scalefactor)][(y + yfac * scalefactor)] = 8;
-        this.myBoard[(x + xfac * scalefactor * 2)][(y + yfac * scalefactor * 2)] = 8;
-        throw this.blockException;
-      }
-    }
+		if (isLegalMove(x, y, oldX, oldY))
+		{
+			// make the move
+			this.myXs[turn] = x;
+			this.myYs[turn] = y;
+			this.myBoard[oldX][oldY] = 0;
+			this.myBoard[x][y] = turn + 1;
 
-    return scalefactor;
-  }
+			// update shortest path length
+			this.pathLengths[turn] = pathLength(turn);
 
-  public boolean checkPos(int[][] board, int xold, int yold, int xnew, int ynew, boolean search)
-  {
-    int i = xold;
-    int j = yold;
-    int k = xnew;
-    int l = ynew;
+			// update turn
+			this.myTurn++;
 
-    if ((k > 2 * this.myBoardSize - 1) || (k < 1) || (l > 2 * this.myBoardSize - 1) || (l < 1)) {
-      if (search) {
-        return false;
-      }
-      throw new IllegalArgumentException("click on the board");
-    }
-    if ((board[k][l] != 0) && (board[k][l] != this.myPlayers + 1)) {
-      if (search) {
-        return false;
-      }
-      throw new IllegalArgumentException("There is already a piece where you are attemting to move.");
-    }
+			// add old location to undo list
+			this.moves.add(new int[] {oldX, oldY, 0});
 
-    if (((i + 2 != k) && (i - 2 != k)) || ((j == l) || (((j + 2 == l) || (j - 2 == l)) && (i == k)))) {
-      if (((j == l) && (board[((i + k) / 2)][j] != 6)) || ((i == k) && (board[i][((j + l) / 2)] != 6)))
-        return true;
-      if (search) {
-        return false;
-      }
-      throw this.wallException;
-    }
+			return true;
+		}
 
-    if (((i + 4 != k) && (i - 4 != k)) || (((j == l) && (board[((i + k) / 2)][l] != 0)) || (((j + 4 == l) || (j - 4 == l)) && (i == k) && 
-      (board[k][((j + l) / 2)] != 0)))) {
-      if (((j == l) && (board[((i + k) / 2 + 1)][j] != 6) && (board[((i + k) / 2 - 1)][j] != 6)) || ((i == k) && 
-        (board[i][((j + l) / 2 + 1)] != 6) && (board[i][((j + l) / 2 - 1)] != 6)))
-        return true;
-      if (search) {
-        return false;
-      }
-      throw this.wallException;
-    }
+		return false;
+	}
 
-    if (((i + 2 == k) || (i - 2 == k)) && 
-      ((j + 2 == l) || (j - 2 == l)) && (
-      ((board[k][j] != 0) && ((board[(i + 3 * (k - i) / 2)][j] == 6) || (board[(2 * k - i)][j] != 0))) || ((board[i][l] != 0) && (
-      (board[i][(j + 3 * (l - j) / 2)] == 6) || (board[i][(2 * l - j)] != 0))))) {
-      if (((board[k][j] != 0) && (board[((i + k) / 2)][j] != 6) && (board[k][((j + l) / 2)] != 6)) || ((board[i][l] != 0) && 
-        (board[i][((j + l) / 2)] != 6) && (board[((i + k) / 2)][l] != 6)))
-        return true;
-      if (search) {
-        return false;
-      }
-      throw this.wallException;
-    }
-    if (search) {
-      return false;
-    }
-    throw new IllegalArgumentException("The place you are trying to go is not next to your piece.");
-  }
+	/**
+	 * Check if this piece movement is legal
+	 *
+	 * Params:
+	 *   x, y = potential new location
+	 *   oldX, oldY = current location
+	 *
+	 * Returns:
+	 *   Whether or not the move is legal
+	 */
+	boolean isLegalMove(int x, int y, int oldX, int oldY)
+	{
 
-  public boolean checkMove(int[][] board, int xold, int yold, int xnew, int ynew)
-  {
-    if (((xold + 2 != xnew) && (xold - 2 != xnew)) || (((yold == ynew) || (((yold + 2 == ynew) || (yold - 2 == ynew)) && (xold == xnew))) && (
-      ((yold == ynew) && (board[((xold + xnew) / 2)][yold] != 6)) || ((xold == xnew) && (board[xold][((yold + ynew) / 2)] != 6)))))
-      return true;
-    return false;
-  }
+		// Check for out-of-bounds
+		if (!isOnBoard(x) || !isOnBoard(y))
+		{
+			return false;
+		}
 
-  public boolean find(int[][] board, int piece, int x, int y)
-  {
-    if (((piece == 1) && (y == 2 * this.myBoardSize - 1)) || ((piece == 2) && (y == 1)) || ((this.myPlayers == 4) && (piece == 3) && (x == 1)) || (
-      (this.myPlayers == 4) && (piece == 4) && (x == 2 * this.myBoardSize - 1)))
-      return true;
-    if ((board[x][y] == 10) || (board[x][y] == 11) || (board[x][y] == 12) || (board[x][y] == 13) || (board[x][y] == 14))
-      return false;
-    board[x][y] += 10;
-    if ((y - 1 != 0) && 
-      (checkMove(board, x, y, x, y - 2)) && 
-      (find(board, piece, x, y - 2)))
-      return true;
-    if ((x - 1 != 0) && 
-      (checkMove(board, x, y, x - 2, y)) && 
-      (find(board, piece, x - 2, y)))
-      return true;
-    if ((y + 1 != 2 * this.myBoardSize) && 
-      (checkMove(board, x, y, x, y + 2)) && 
-      (find(board, piece, x, y + 2)))
-      return true;
-    if ((x + 1 != 2 * this.myBoardSize) && 
-      (checkMove(board, x, y, x + 2, y)) && 
-      (find(board, piece, x + 2, y)))
-      return true;
-    return false;
-  }
+		// Check if another player is where we're going
+		if (this.myBoard[x][y] != 0)
+		{
+			return false;
+		}
 
-  public ArrayList<Integer> shorterPath(int piece)
-  {
-    ArrayList<Integer> path = new ArrayList<Integer>();
-    ArrayList<Integer> queue = new ArrayList<Integer>();
-    boolean finished = false;
-    this.testBoard = deepCopy(this.myBoard);
-    queue.add(getColumn(piece));
-    queue.add(getRow(piece));
-    int x = queue.get(0);
-		int y = queue.get(1);
-    this.testBoard[x][y] = (100 * x + y);
-    for (int i = 0; queue.size() != i; i += 2)
-    {
-      x = queue.get(i);
-      y = queue.get(i + 1);
-      for (int j = x - 4; j <= x + 4; j += 2) {
-        for (int k = y - 4; k <= y + 4; k += 2) {
-          if ((checkPos(this.myBoard, x, y, j, k, true)) && 
-            (this.testBoard[j][k] < 10)) {
-            queue.add(Integer.valueOf(j));
-            queue.add(Integer.valueOf(k));
-            this.testBoard[j][k] = (100 * x + y);
-            if (((piece == 3) && (j == 1)) || ((piece == 4) && (j == 2 * this.myBoardSize - 1)) || ((piece == 1) && (k == 2 * this.myBoardSize - 1)) || (
-              (piece == 2) && (k == 1))) {
-              finished = true;
-              break;
-            }
-          }
-        }
-        if (finished)
-          break;
-      }
-      if (finished)
-        break;
-    }
-    path.add(queue.get(queue.size() - 2));
-    path.add(queue.get(queue.size() - 1));
-    for (int i = 1; i <= 2 * this.myBoardSize; i += 2) {
-			if (path.get(0) != getColumn(piece) || path.get(1) != getRow(piece))
+		// jump dist
+		int Xdist = Math.abs(x - oldX);
+		int Ydist = Math.abs(y - oldY);
+		int avgX = (x + oldX) / 2;
+		int avgY = (y + oldY) / 2;
+		int in_between = this.myBoard[avgX][avgY];
+		int onePastX = x + avgX - oldX;
+		int onePastY = y + avgY - oldY;
+
+		// normal move: one space away and no wall between
+		if (
+			// one space away
+			(Xdist == 2 && Ydist == 0
+			 || Ydist == 2 && Xdist == 0)
+
+			// no wall in-between
+			&& in_between != WALL_VALUE)
+		{
+			return true;
+		}
+
+		// jump in a straight line
+		else if (
+				(
+					// target is two away in the row
+					Xdist == 4 && Ydist == 0
+
+					// no wall between players or between opponent and target
+					&& this.myBoard[avgX + 1][oldY] != WALL_VALUE
+					&& this.myBoard[avgX - 1][oldY] != WALL_VALUE
+
+					|| 
+					// two away in the column
+					Ydist == 4 && Xdist == 0
+
+					// no wall between players or between opponent and target
+					&& this.myBoard[oldX][avgY + 1] != WALL_VALUE
+					&& this.myBoard[oldX][avgY - 1] != WALL_VALUE
+				)
+				// opponent between target and active player
+				&& in_between != 0
+			)
+		{
+			return true;
+		}
+
+		/*
+		 * jump diagonally if blocked by enemy player and a wall
+		 * or another enemy player and the edge of the board
+		 */
+		else if (
+				Xdist == 2 && Ydist == 2
+				&& (
+					// opponent above or below
+					this.myBoard[x][oldY] != 0
+
+					// wall or the edge is on the far side of opponent
+				 	&& (!isOnBoard(onePastX)
+				 	|| this.myBoard[onePastX][oldY] == WALL_VALUE)
+				
+					// no wall between you and opponent
+				 	&& this.myBoard[avgX][oldY] != WALL_VALUE
+
+					// no wall between opponent and target
+				 	&& this.myBoard[x][avgY] != WALL_VALUE
+
+				 	|| 
+					// opponent to one side or the other
+					this.myBoard[oldX][y] != 0
+
+					// wall or edge of board beyond opponent
+				 	&& (!isOnBoard(onePastY)
+				 	|| this.myBoard[oldX][onePastY] == WALL_VALUE)
+				
+					// no wall between players
+				 	&& this.myBoard[oldX][avgY] != WALL_VALUE
+
+					// no wall between opponent and target
+				 	&& this.myBoard[avgX][y] != WALL_VALUE
+				)
+			)
+		{
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+
+	/**
+	 * Checks for wall legality, and if legal, places the wall
+	 *
+	 * Params:
+	 *   x = the horizontal location
+	 *   y = the vertical location
+	 *   o = the orientation (1 for vertical, 2 for horizontal)
+	 */
+	boolean placeWall(int x, int y, int o)
+	{
+		if (!isLegalWall(x, y, o))
+			return false;
+
+		// Add the wall for checking both player's paths
+		wallVal(x, y, o, WALL_VALUE);
+
+		int[] testLengths = new int[this.myPlayers];
+
+		// check if this wall blocks any path
+		for (int i = 0; i < this.myPlayers; i++)
+		{
+			if (wallsInPath[0][linearize(x, y, o)])
+			{
+				testLengths[i] = pathLength(0);
+
+				if (testLengths[i] == 0)
+				{
+					// remove wall
+					wallVal(x, y, o, 0);
+					return false;
+				}
+			}
+		}
+
+		// All players have a path, so update shortest paths
+		for (int i = 0; i < this.myPlayers; i++)
+		{
+			if (testLengths[i] != 0)
+				this.pathLengths[i] = testLengths[i];
+		}
+		
+		// Reduce the walls remaining
+		this.myWallCounts[this.myTurn % this.myPlayers]--;
+
+		// update turn
+		this.myTurn++;
+
+		// add wall to the list of moves (for undo)
+		this.moves.add(new int[] {x, y, o});
+
+		return true;
+	}
+
+	/**
+	 * This function helps keep track of walls that would interrupt
+	 * the shortest path, so we can recalculate when necessary
+	 */
+	void addWalls(int player, int x, int y, int oldX, int oldY)
+	{
+		int avgX = (x + oldX) / 2;
+		int avgY = (y + oldY) / 2;
+
+		// horizontal move
+		if (Math.abs(x - oldX) == 2)
+		{
+			if (isOnBoard(y - 1))
+				wallsInPath[player][linearize(avgX, y - 1, 1)] = true;
+
+			if (isOnBoard(y + 1))
+				wallsInPath[player][linearize(avgX, y + 1, 1)] = true;
+		}
+
+		// vertical move
+		else
+		{
+			if (isOnBoard(x - 1))
+				wallsInPath[player][linearize(x - 1, avgY, 2)] = true;
+
+			if (isOnBoard(x + 1))
+				wallsInPath[player][linearize(x + 1, avgY, 2)] = true;
+		}
+	}
+	
+	/**
+	 * Calculate linear location in array from x and y
+	 */
+	int linearize(int x, int y, int o)
+	{
+		return x - 1 + (this.myBoardSize - 1) * (y - 1) + o - 1;
+	}
+
+	/**
+	 * Asserts a wall is legal
+	 *
+	 * Params:
+	 *   x = horizontal location of new wall
+	 *   y = vertical location of new wall
+	 *   o = orientation of new wall (vertical, 1, or horizontal, 2)
+	 */
+	boolean isLegalWall(int x, int y, int o)
+	{
+		// Make sure wall isn't in move land
+		if (isEven(x) || isEven(y))
+			return false;
+
+		// check for out-of-bounds
+		if (!isOnBoard(x) || !isOnBoard(y))
+			return false;
+
+		// Make sure orientation is valid
+		if (o != 1 && o != 2)
+			return false;
+
+		// Make sure the player has walls left
+		if (this.myWallCounts[this.myTurn % this.myPlayers] == 0)
+			return false;
+
+		int xAdd = o - 1;
+		int yAdd = o % 2;
+
+		if (this.myBoard[x][y] != 0
+			|| this.myBoard[x + xAdd][y + yAdd] != 0
+			|| this.myBoard[x - xAdd][y - yAdd] != 0)
+			return false;
+
+		return true;
+	}
+
+	/**
+	 * The wall defined by x, y, and o will be set to 'val'.
+	 */
+	void wallVal(int x, int y, int o, int val)
+	{
+		int xAdd = o - 1;
+		int yAdd = o % 2;
+
+		this.myBoard[x][y] = val;
+		this.myBoard[x + xAdd][y + yAdd] = val;
+		this.myBoard[x - xAdd][y - yAdd] = val;
+	}
+
+	/**
+	 * Asserts a move is within the limits of the board
+	 */
+	boolean isOnBoard(int d)
+	{
+		return 0 <= d && d < this.myBoardSize * 2 + 1;
+	}
+
+	/**
+	 * Evaluate function for Negascout.
+	 *
+	 * Boards look better if your path is shorter than your opponent,
+	 * and if you have more walls than your opponent.
+	 *
+	 * Negative numbers are good for player 1, positive are good for 2.
+	 */
+	int evaluate()
+	{
+		int won = 0;
+		if (this.myYs[0] == 0)
+			won = -100;
+		if (this.myYs[1] == this.myBoardSize - 1)
+			won = 100;
+		return (
+			won
+			 - this.myWallCounts[0]
+			 + this.myWallCounts[1]
+			 + 2 * this.pathLengths[0]
+			 - 2 * this.pathLengths[1]
+		);
+	}
+
+	/**
+	 * Negascout algorithm, a variation of the minimax algorithm, which
+	 * recursively examines possible moves for both players and evaluates
+	 * them, looking for the best one.
+	 *
+	 * Params:
+	 *   qb = The board to search for a move on
+	 *   depth = how many moves deep to search
+	 *   a, b = alpha and beta for pruning unecessary sub-trees
+	 *   seconds, t0 = time limit and time of beginning the search
+	 *   best = best move so far for scouting
+	 *
+	 * Returns:
+	 *   best move that could be found in form [x, y, o, score]
+	 */
+	int[] negascout(int depth, int alpha, int beta, long millis, long t0, int[] best)
+	{
+		if (depth <= 0 || this.isGameOver()
+				|| System.currentTimeMillis() - t0 > millis)
+		{
+			int score = this.evaluate();
+			if (this.myTurn % 2 == 0)
+				score = -score;
+			return new int[] {0, 0, 0, score};
+		}
+
+		// initialize values
+		int[] opponentMove = new int[] {0, 0, 0};
+		int scoutVal = beta;
+		int bestX = 0;
+		int bestY = 0;
+		int bestO = 0;
+		int score = 0;
+		int oldX = this.myXs[this.myTurn % 2];
+		int oldY = this.myYs[this.myTurn % 2];
+		int oldPathLength = this.pathLengths[this.myTurn % 2];
+		boolean first = true;
+		QuoridorModel testBoard = new QuoridorModel(this);
+
+		// We'll only do this for the root node, where we have a best move recorded
+		if (best.length > 1)
+		{
+			if (best[2] == 0)
+				testBoard.movePiece(best[0], best[1]);
+			else
+				testBoard.placeWall(best[0], best[1], best[2]);
+
+			opponentMove = testBoard.negascout(
+				depth - 1,
+				-scoutVal,
+				-alpha,
+				millis,
+				t0,
+				null
+			);
+
+			alpha = -opponentMove[3];
+			bestX = best[0];
+			bestY = best[1];
+			bestO = best[2];
+			first = false;
+		}
+
+		// move piece
+		for (int[] i : new int[][] {
+				{oldX - 2, oldY},
+				{oldX, oldY - 2},
+				{oldX + 2, oldY},
+				{oldX, oldY + 2}
+			})
+		{
+			// legal and we haven't checked it already
+			if (this.isLegalMove(i[0], i[1], oldX, oldY)
+				 && (best.length < 2
+					 || best[2] != 0
+					 || best[0] != i[0]
+					 || best[1] != i[1]
+					)
+				)
+			{
+				testBoard = new QuoridorModel(this);
+				testBoard.movePiece(i[0], i[1]);
+				
+				/* Don't consider moves that don't shorten our path.
+				 * This is usually bad, and sometimes the computer will make a
+				 * dumb move to avoid getting blocked by a wall.
+				 */
+				if (testBoard.pathLengths[this.myTurn % 2] >= oldPathLength)
+					continue;
+
+				opponentMove = testBoard.negascout(
+					depth - 1,
+					-scoutVal,
+					-alpha,
+					millis,
+					t0,
+					null
+				);
+
+				if (alpha < -opponentMove[3] && -opponentMove[3] < beta && !first)
+				{
+					opponentMove = testBoard.negascout(
+						depth - 1,
+						-beta,
+						-alpha,
+						millis,
+						t0,
+						null
+					);
+				}
+
+				if (-opponentMove[3] > alpha)
+				{
+					alpha = -opponentMove[3];
+					bestX = i[0];
+					bestY = i[1];
+					bestO = 0;
+				}
+
+				if (alpha >= beta || System.currentTimeMillis() - t0 > millis)
+					return new int[] {bestX, bestY, bestO, alpha};
+
+				scoutVal = alpha + 1;
+
+				if (first)
+					first = false;
+			}
+
+			// Check jumps
+			else if (isOnBoard(i[0]) && isOnBoard(i[1])
+				 && this.myBoard[i[0]][i[1]] != 0)
+			{
+				for (int[] j : new int[][] {
+						{i[0] - 2, i[1]}, 
+						{i[0], i[1] - 2}, 
+						{i[0] + 2, i[1]}, 
+						{i[0], i[1] + 2}
+					})
+				{
+					if (this.isLegalMove(j[0], j[1], oldX, oldY))
+					{
+						testBoard = new QuoridorModel(this);
+						testBoard.movePiece(j[0], j[1]);
+						
+						/* Don't consider jumps that make our length longer.
+						 * There can be situations where the only available move is
+						 * a jump that doesn't make our path shorter, so examine those.
+						 */
+						if (testBoard.pathLengths[this.myTurn % 2] > oldPathLength)
+							continue;
+
+						opponentMove = testBoard.negascout(
+							depth - 1,
+							-scoutVal,
+							-alpha,
+							millis,
+							t0,
+							null
+						);
+
+						if (alpha < -opponentMove[3]
+							 && -opponentMove[3] < beta
+							 && !first)
+						{
+							opponentMove = testBoard.negascout(
+								depth - 1,
+								-beta,
+								-alpha,
+								millis,
+								t0,
+								null
+							);
+						}
+
+						if (-opponentMove[3] > alpha)
+						{
+							alpha = -opponentMove[3];
+							bestX = j[0];
+							bestY = j[1];
+							bestO = 0;
+						}
+
+						if (alpha >= beta || System.currentTimeMillis() - t0 > millis)
+							return new int[] {bestX, bestY, bestO, alpha};
+
+						scoutVal = alpha + 1;
+
+						if (first)
+							first = false;
+					}
+				}
+			}
+		}
+
+		// walls
+		for (int x = 1; x < this.myBoardSize; x += 2)
+		{
+			for (int y = 1; y < this.myBoardSize; y += 2)
+			{
+				for (int o = 1; o < 3; o++)
+				{
+					// limit to walls in the opponents path,
+					// or walls in their own path, but opposite orientation to block
+					if (
+							// Walls in my opponent's path
+							this.wallsInPath[(this.myTurn + 1) % 2][linearize(x, y, o)]
+
+							// walls that block the wall the opponent would place if I move
+							 || opponentMove != null
+							 && (
+								// opponent plays vertical wall, blocking walls have same x
+									opponentMove[2] == 1 && opponentMove[0] == x
+
+									// check same place, opposite orientation
+									 && (opponentMove[1] == y && o == 2
+									
+										// check blocking either end
+										 || Math.abs(opponentMove[1] - y) == 2 && o == 1)
+									
+									// opponent plays horizontal wall, blocking walls have same y
+									 || (opponentMove[2] == 2 && opponentMove[1] == y
+
+									// same place opposite orientation
+									 && (opponentMove[0] == x && o == 1
+									
+										// blocking either end
+										 || Math.abs(opponentMove[0] - x) == 2 && o == 2))
+									)
+							
+							// check walls around me, in case I can block off my path
+							// (least essential, but I think I'll keep it)
+							|| Math.abs(x - oldX) == 1 && Math.abs(y - oldY) == 1
+
+							// check walls around my opponent
+							|| Math.abs(x - myXs[(this.myTurn + 1) % 2]) == 1
+							 	&& Math.abs(y - myYs[(this.myTurn + 1) % 2]) == 1
+
+							// check all walls in the first case
+							// for obvious moves that we might otherwise miss
+							|| best.length == 1
+						)
+					{
+						// some testing done twice, but faster to test than allocate
+						if (this.isLegalWall(x, y, o))
+						{
+							testBoard = new QuoridorModel(this);
+							if (testBoard.placeWall(x, y, o))
+							{
+								score = -testBoard.negascout(
+									depth - 1,
+									-scoutVal,
+									-alpha,
+									millis,
+									t0,
+									null
+								)[3];
+
+								if (alpha < score && score < beta && !first)
+								{
+									score = -testBoard.negascout(
+										depth - 1,
+										-beta,
+										-alpha,
+										millis,
+										t0,
+										null
+									)[3];
+								}
+
+								if (score > alpha)
+								{
+									alpha = score;
+									bestX = x;
+									bestY = y;
+									bestO = o;
+								}
+
+								if (alpha >= beta
+										|| System.currentTimeMillis() - t0 > millis)
+									return new int[] {bestX, bestY, bestO, alpha};
+
+								scoutVal = alpha + 1;
+							}
+						}
+					}
+				}
+			}
+		}
+
+		return new int[] {bestX, bestY, bestO, alpha};
+	}
+
+	/**
+	 * Finds the length of the shortest path for a player
+	 * Also keeps track of walls that would block the path
+	 *
+	 * Returns: length of the shortest path, ignoring the other player
+	 *   0 for no path
+	 */
+	int pathLength(int player)
+	{
+		// Remove other players from the board so that they don't
+		// interfere with finding the shortest path.
+		removePlayers(player);
+
+		// get current location
+		int x = this.myXs[player];
+		int y = this.myYs[player];
+
+		// distance from current location
+		int g = 0;
+		
+		// heuristic distance (distance from goal)
+		int h = heuristic(player, x, y);
+
+		// To keep track of where we go
+		int[][] paths = new int[this.myBoardSize][this.myBoardSize];
+		
+		// Starting location
+		paths[x][y] = 1;
+
+		// This is a sort of priority queue, specific to this application
+		// We'll only be adding elements of the same or slightly lower priority
+		Hashtable<Integer, ArrayList<int[]>> nodes = new Hashtable<Integer, ArrayList<int[]>>();
+		
+		// add first node, current location
+		nodes.put(h, new ArrayList<int[]>());
+		nodes.get(h).add(new int[] {x, y, g});
+
+		// current stores the node we're using on each iteration
+		int[] current;
+		int length;
+		int key = h;
+
+		// while there are nodes left to evaluate
+		while (!nodes.isEmpty())
+		{
+			current = nodes.get(h).remove(0);
+			x = current[0];
+			y = current[1];
+			g = current[2];
+			h = heuristic(player, x, y);
+
+			// if we've reached the end
+			if (h == 0)
+				break;
+
+			// Try all moves
+			int[][] moves = new int[][] {
+				{x - 2, y},
+				{x, y - 2},
+				{x + 2, y},
+				{x, y + 2}
+			};
+
+			for (int[] i : moves)
+			{
+				if (isLegalMove(i[0], i[1], x, y) && paths[i[0]][i[1]] == 0)
+				{
+					h = heuristic(player, i[0], i[1]);
+					paths[i[0]][i[1]] = 100 * x + y + 2;
+					
+					if (!nodes.containsKey(g + h + 2))
+						nodes.put(g + h + 2, new ArrayList<int[]>());
+
+					nodes.get(g + h + 2).add(new int[] {i[0], i[1], g + 2});
+				}
+			}
+
+			// if this is the last of this weight
+			// check for empty queue and change the key 
+			if (nodes.get(key).isEmpty())
+			{
+				nodes.remove(key);
+				
+				if (nodes.isEmpty())
+				{
+					addPlayers(player);
+					return 0;
+				}
+
+				while (!nodes.containsKey(key))
+					key += 2;
+			}
+		}
+
+		// If we ran out of nodes, we didn't reach the end
+		if (nodes.isEmpty())
+		{
+			addPlayers(player);
+			return 0;
+		}
+
+		// re-initialize this player's wallsInPath to false
+		for (int i = 0; i < this.wallsInPath[player].length; i++)
+			this.wallsInPath[player][i] = false;
+
+		int oldX;
+		int oldY;
+		
+		while (paths[x][y] != 1)
+		{
+			oldX = x;
+			oldY = y;
+			x = paths[x][y] / 100;
+			y = paths[oldX][y] % 100 - 2;
+			addWalls(player, x, y, oldX, oldY);
+		}
+
+		addPlayers(player);
+		return g / 2;
+	}
+
+	/**
+	 * Remove all players except the excluded player from the board
+	 * for purposes of finding a shortest path.
+	 */
+	void removePlayers(int excludedPlayer)
+	{
+		for (int i = 0; i < this.myPlayers; i++)
+		{
+			if (i == excludedPlayer)
 				continue;
-      for (int j = 1; j <= 2 * this.myBoardSize; j += 2)
-        if (((path.get(0)) == i) && ((path.get(1)) == j)) {
-          path.add(0, Integer.valueOf(this.testBoard[i][j] / 100));
-          path.add(1, Integer.valueOf(this.testBoard[i][j] - (path.get(0)) * 100));
-        }
-      i += 2;
-    }
 
-    if ((path.get(0) == path.get(2)) && (path.get(1) == path.get(3))) {
-      path.remove(3);
-      path.remove(2);
-    }
-    return path;
-  }
+			this.myBoard[this.myXs[i]][this.myYs[i]] = 0;
+		}
+	}
 
-  public void moveComp(int player)
-  {
-    ArrayList<Integer> path = shorterPath(player);
-    if ((path.size() == 4) || (this.myCompLevel == 1) || (this.myWallCount[1] <= 0) || (this.myWallCount[0] == this.myWallNumber)) {
-      changePos((path.get(2)), (path.get(3)));
-    }
-    else if (this.myCompLevel == 2) {
-      if (this.myWallCount[(player - 1)] > this.myWallCount[0]) {
-        if (checkWall(getColumn(1), getRow(1) + 1, true, true) == -1)
-          addWall(6, getColumn(1), getRow(1) + 1, true);
-        else if (checkWall(getColumn(1), getRow(1) + 1, false, true) == 1)
-          addWall(6, getColumn(1), getRow(1) + 1, false);
-        else if (checkWall(getColumn(1) - 1, getRow(1), false, true) == 1)
-          addWall(6, getColumn(1) - 1, getRow(1), false);
-        else if (checkWall(getColumn(1) + 1, getRow(1), false, true) == 1)
-          addWall(6, getColumn(1) + 1, getRow(1), false);
-        else if (checkWall(getColumn(1) - 1, getRow(1), true, true) == -1)
-          addWall(6, getColumn(1) - 1, getRow(1), true);
-        else if (checkWall(getColumn(1) + 1, getRow(1), true, true) == -1)
-          addWall(6, getColumn(1) + 1, getRow(1), true);
-        else
-          changePos(path.get(2), path.get(3));
-      }
-      else changePos(path.get(2), path.get(3));
+	/**
+	 * Add all players except the excluded player to the board
+	 * at the myXs and myYs locations.
+	 */
+	void addPlayers(int excludedPlayer)
+	{
+		for (int i = 0; i < this.myPlayers; i++)
+		{
+			if (i == excludedPlayer)
+				continue;
 
-    }
-    else if (this.myCompLevel == 3) {
-      ArrayList<Integer> path1 = shorterPath(1);
-      ArrayList<Integer> path2 = shorterPath(player);
+			this.myBoard[this.myXs[i]][this.myYs[i]] = i + 1;
+		}
+	}
 
-      if (path2.size() > path1.size() && (this.myWallCount[(player - 1)] > 0)) {
-        int x = 0; int y = 0;
 
-        double ratio = path1.size() / path2.size();
-        for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-          for (int j = 2 * this.myBoardSize - 1; j >= 1; j--) {
-            if (((isHorizontal(i, j)) && (checkWall(i, j, true, true) == -1)) || ((isVertical(i, j)) && 
-              (checkWall(i, j, true, true) == -1))) {
-              QuoridorModel b1 = new QuoridorModel(this);
-              b1.addWall(6, i, j, true);
-              path1 = b1.shorterPath(1);
-              path2 = b1.shorterPath(player);
-              if (path1.size() / path2.size() > ratio) {
-                ratio = path1.size() / path2.size();
-                x = i;
-                y = j;
-              }
-            }
-          }
-        }
+	/**
+	 * This is a heuristic for distance to goal,
+	 * just straight line distance to goal.
+	 */
+	int heuristic(int player, int x, int y)
+	{
+		switch (player)
+		{
+			case 0:
+				return y;
+			case 1:
+				return this.myBoardSize * 2 - 1 - y;
+			case 2:
+				return this.myBoardSize * 2 - 1 - x;
+			case 3:
+				return x;
+		}
+		return 100;
+	}
 
-        if ((x != 0) && (y != 0))
-          addWall(6, x, y, true);
-        else
-          changePos(path.get(2), path.get(3));
-      } else {
-        changePos(path.get(2), path.get(3));
-      }
+	/**
+	 * Check if the game is over.
+	 */
+	boolean isGameOver()
+	{
+		for (int i = 0; i < this.myPlayers; i++)
+			if (heuristic(i, this.myXs[i], this.myYs[i]) == 0)
+				return true;
+		return false;
+	}
 
-    }
-    else if (this.myCompLevel == 4) {
-      double[] move = compmove(new QuoridorModel(this), 2);
-      if ((!isEven((int)move[0])) && (!isEven((int)move[1])))
-        changePos((int)move[0], (int)move[1]);
-      else {
-        addWall(6, (int)move[0], (int)move[1], true);
-      }
-    }
-    else if (this.myCompLevel == 5) {
-      double[] move = compmove(new QuoridorModel(this), 3);
-      if ((!isEven((int)move[0])) && (!isEven((int)move[1])))
-        changePos((int)move[0], (int)move[1]);
-      else
-        addWall(6, (int)move[0], (int)move[1], true);
-    }
-  }
-
-  public double[] compmove(QuoridorModel model, int iteration) {
-    ArrayList<Integer> path1 = model.shorterPath(1);
-    ArrayList<Integer> path2 = model.shorterPath(2);
-
-    if (path1.size() == 4 || path2.size() == 4 || iteration == 0) {
-      return new double[] { path2.get(2), path2.get(3), 
-        evaluate(path1.size() / 2, path2.size() / 2, model.getWallCount(1), model.getWallCount(2)) };
-    }
-    int x = 0; int y = 0;
-    if (model.getPlayer() == 2) {
-      double value = 0.0D; double maxValue = -100.0D;
-      for (int i = 2 * this.myBoardSize - 1; i >= 2; i--) {
-        for (int j = 2; j <= 2 * this.myBoardSize - 1; j++) {
-          if (((isHorizontal(i, j)) && (model.checkWall(i, j, true, true) == -1)) || (
-            (isVertical(i, j)) && 
-            (model.checkWall(i, j, true, true) == -1) && 
-            (model.getWallCount(2) > 0))) {
-            QuoridorModel b1 = new QuoridorModel(model);
-            b1.addWall(6, i, j, true);
-            value = compmove(b1, iteration - 1)[2];
-
-            for (int k = 0; k < path1.size() - 3; k += 2) {
-              if (((path1.get(k) + path1.get(k + 2)) / 2 == i) && ((path1.get(k + 1) + path1.get(k + 3)) / 2 == j))
-                value += 0.0001D;
-            }
-            value -= (Math.abs(path1.get(0) - i) + Math.abs(path1.get(1) - j)) / 10000.0D;
-
-            if (value > maxValue) {
-              x = i;
-              y = j;
-              maxValue = value;
-            }
-          }
-        }
-      }
-      int i = path2.get(2);
-			int j = path2.get(3);
-      QuoridorModel b1 = new QuoridorModel(model);
-      b1.changePos(i, j);
-      value = compmove(b1, iteration - 1)[2];
-      if (value > maxValue) {
-        x = i;
-        y = j;
-        maxValue = value;
-      }
-      return new double[] { x, y, maxValue };
-    }
-    double value = 0.0D; double minValue = 100.0D;
-    for (int i = 2 * this.myBoardSize - 1; i >= 2; i--) {
-      for (int j = 2; j <= 2 * this.myBoardSize - 1; j++) {
-        if (((isHorizontal(i, j)) && (model.checkWall(i, j, true, true) == -1)) || (
-          (isVertical(i, j)) && 
-          (model.checkWall(i, j, true, true) == -1) && 
-          (model.getWallCount(1) > 0)))
-        {
-          QuoridorModel b1 = new QuoridorModel(model);
-          b1.addWall(6, i, j, true);
-          value = compmove(b1, iteration - 1)[2];
-
-          for (int k = 0; k < path2.size() - 3; k += 2) {
-            if ((((path2.get(k)) + (path2.get(k + 2))) / 2 == i) && (((path2.get(k + 1)) + (path2.get(k + 3))) / 2 == j))
-              value -= 0.0001D;
-          }
-          value += (Math.abs(path2.get(0) - i) + Math.abs(path2.get(1) - j)) / 10000.0D;
-
-          if (value < minValue) {
-            x = i;
-            y = j;
-            minValue = value;
-          }
-        }
-      }
-    }
-    int i = path1.get(2);
-		int j = path1.get(3);
-    QuoridorModel b1 = new QuoridorModel(model);
-    b1.changePos(i, j);
-    value = compmove(b1, iteration - 1)[2];
-    if (value < minValue) {
-      x = i;
-      y = j;
-      minValue = value;
-    }
-    return new double[] { x, y, minValue };
-  }
-
-  public double evaluate(double dist1, double dist2, double wallNum1, double wallNum2)
-  {
-    return dist1 - dist2 + 0.5D * (wallNum2 - wallNum1);
-  }
-
-  public void tempPos(int x, int y)
-  {
-    int piece = getPlayer();
-    int i = getColumn(piece);
-    int j = getRow(piece);
-
-    if (checkPos(this.myBoard, i, j, x, y, true)) {
-      this.myBoard[x][y] = (this.myPlayers + 1);
-    }
-  }
-
-  public void removeTemp()
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-      for (int j = 1; j <= 2 * this.myBoardSize - 1; j++) {
-        if ((this.myBoard[i][j] == 7) || (this.myBoard[i][j] == 8) || (this.myBoard[i][j] == this.myPlayers + 1))
-          this.myBoard[i][j] = 0;
-      }
-    }
-  }
-
+	/**
+	 * Copy the board into a new array.
+	 */
   public int[][] deepCopy(int[][] board)
   {
-    int[][] newBoard = new int[2 * this.myBoardSize + 1][2 * this.myBoardSize + 1];
-    for (int i = 0; i <= 2 * this.myBoardSize; i++) {
-      for (int j = 0; j <= 2 * this.myBoardSize; j++) {
+    int[][] newBoard = new int[board.length][board.length];
+    for (int i = 0; i < board.length; i++) {
+      for (int j = 0; j < board.length; j++) {
         newBoard[i][j] = board[i][j];
       }
     }
     return newBoard;
   }
 
-  public boolean isHorizontal(int x, int y)
-  {
-    return (!isEven(x)) && (isEven(y));
-  }
-
-  public boolean isVertical(int x, int y)
-  {
-    return (isEven(x)) && (!isEven(y));
-  }
-
   public boolean isEven(int number)
   {
     return number % 2 == 0;
-  }
-
-  public boolean getPlay4()
-  {
-    return this.myPlayers == 4;
   }
 
   public int getPlayer()
@@ -604,79 +1061,23 @@ public class QuoridorModel
     return this.myTurn % this.myPlayers;
   }
 
-  public boolean getComp()
-  {
-    return this.compPlay;
-  }
-
-  public int getCompLevel() {
-    return this.myCompLevel;
-  }
-
-  public int getPlayers()
-  {
-    return this.myPlayers;
-  }
-
-  public int getTurn()
-  {
-    return this.myTurn;
-  }
-
   public int getValue(int x, int y)
   {
     return this.myBoard[x][y];
   }
 
-  public int[] getWallCounts()
-  {
-    return this.myWallCount;
-  }
-
-  public int getBoardSize()
-  {
-    return this.myBoardSize;
-  }
-
   public int getWallCount(int player)
   {
-    return this.myWallCount[(player - 1)];
+    return this.myWallCounts[player - 1];
   }
 
-  public int[][] getBoard() {
-    return this.myBoard;
-  }
+	public int getColumn(int player)
+	{
+		return this.myXs[player - 1] + 1;
+	}
 
-  public int getRow(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize; i += 2) {
-      for (int j = 1; j <= 2 * this.myBoardSize; j += 2) {
-        if (this.myBoard[i][j] == piece)
-          return j;
-      }
-    }
-    throw new IllegalArgumentException("piece doesn't exist");
-  }
-
-  public int getColumn(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize; i += 2) {
-      for (int j = 1; j <= 2 * this.myBoardSize; j += 2) {
-        if (this.myBoard[i][j] == piece)
-          return i;
-      }
-    }
-    throw new IllegalArgumentException("piece doesn't exist");
-  }
-
-  public boolean exist(int piece)
-  {
-    for (int i = 1; i <= 2 * this.myBoardSize; i += 2) {
-      for (int j = 1; j <= 2 * this.myBoardSize; j += 2) {
-        if (this.myBoard[i][j] == piece)
-          return true;
-      }
-    }
-    return false;
-  }
+	public int getRow(int player)
+	{
+		return this.myYs[player - 1] + 1;
+	}
 }

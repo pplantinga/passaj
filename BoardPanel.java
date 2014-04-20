@@ -294,21 +294,15 @@ public class BoardPanel extends JPanel
     throw new IllegalArgumentException("Click somewhere ON the board.");
   }
 
-  public boolean isTopLeftHalf(int pix)
-  {
-    if (pixToPos(pix) == 1) {
-      return false;
-    }
-    if (pixToPos(pix) == 2 * this.myBoardSize - 1) {
-      return true;
-    }
-    for (int i = 0; i <= 8; i++) {
-      if ((pix > this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (pix <= this.myWidth * i / this.myBoardSize - this.myWallWidth / 2 - this.myBlockWidth / 2))
-        return true;
-    }
-    return false;
-  }
-
+	public int orientation(int xpix, int ypix)
+	{
+		if (!isEven(pixToPos(xpix)) && isEven(pixToPos(ypix)))
+			return 2;
+		else if (isEven(pixToPos(xpix)) && !isEven(pixToPos(ypix)))
+			return 1;
+		else
+			return 0;
+	}
 
   public int hexPixToPos(int x, int y, String which)
   {

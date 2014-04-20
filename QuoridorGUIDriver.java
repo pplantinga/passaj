@@ -58,7 +58,7 @@ public class QuoridorGUIDriver extends JFrame
 		}
 		else
 		{
-			this.myModel = new QuoridorModel(this.playerCount, size, compLevel);
+			this.myModel = new QuoridorModel(this.playerCount, size);
 			int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
 			int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
 			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
@@ -196,9 +196,8 @@ public class QuoridorGUIDriver extends JFrame
       {
 				int x = this.myBoardPanel.pixToPos(e.getX());
 				int y = this.myBoardPanel.pixToPos(e.getY());
-				boolean xhalf = this.myBoardPanel.isTopLeftHalf(e.getX());
-				boolean yhalf = this.myBoardPanel.isTopLeftHalf(e.getY());
-				this.myModel.move(x, y, xhalf, yhalf);
+				int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+				this.myModel.move(x, y, o);
 
 				int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
 				int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
@@ -206,7 +205,7 @@ public class QuoridorGUIDriver extends JFrame
         this.myBoardPanel.repaint();
 
         if (this.compLevel != 0)
-          this.myModel.moveComp(2);
+          this.myModel.ai_move(this.compLevel * 1000);
 
         String fieldText = "";
 				for (int i = 0; i < this.playerCount; i++)
