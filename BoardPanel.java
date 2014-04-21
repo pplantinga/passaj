@@ -104,7 +104,7 @@ public class BoardPanel extends JPanel
 
 				// Lighter square first, for a border
 				pen.setColor(Color.lightGray);
-        paintBlock(pen, x - 1, y - 1, this.myBlockWidth + 2);
+        paintBlock(pen, x, y, this.myBlockWidth);
 
 				// If it's a goal row, make it slighty lighter than the rest
         if (j == 0
@@ -115,7 +115,7 @@ public class BoardPanel extends JPanel
         else
           pen.setColor(Color.black);
 
-        paintBlock(pen, x, y, this.myBlockWidth);
+        paintBlock(pen, x + 1, y + 1, this.myBlockWidth - 2);
       }
     }
 	}
@@ -178,17 +178,17 @@ public class BoardPanel extends JPanel
 	public void paintWall(Graphics pen, int[] wall)
 	{
 		int width = this.myWallWidth;
-		int height = this.myBlockWidth + this.myWallWidth;
-		int adjust = -this.myWallWidth / 2;
+		int height = 2 * this.myBlockWidth + this.myWallWidth;
+		int adjust = -this.myWallWidth / 2 - 1;
 		if (wall[2] == 1)
 		{
 			int x = this.convertToPix(wall[0], adjust);
-			int y = this.convertToPix(wall[1] - 1, adjust);
+			int y = this.convertToPix(wall[1], adjust * 4);
 			pen.fillRect(x, y, width, height);
 		}
 		else
 		{
-			int x = this.convertToPix(wall[0] - 1, adjust);
+			int x = this.convertToPix(wall[0], adjust * 4);
 			int y = this.convertToPix(wall[1], adjust);
 			pen.fillRect(x, y, height, width);
 		}
