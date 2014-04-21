@@ -71,7 +71,7 @@ public class InputGUIDriver extends JFrame
 		this.myPlayers = names.length;
 		if (this.myPlayers != 6)
 		{
-			this.myPlay[(this.myPlayers - 1)].setSelected(true);
+			this.myPlay[this.myPlayers - 1].setSelected(true);
 			this.myPlay[0].setSelected(false);
 		}
 
@@ -94,13 +94,17 @@ public class InputGUIDriver extends JFrame
 		// Enable as many fields as there are players
     for (int i = 0; i < 12; i++)
 		{
-			String text = names[i/2];
-			if (i % 2 == 1)
-				text = colors[i/2];
       if (i < this.myPlayers * 2)
+			{
+				String text = names[i / 2];
+				if (i % 2 == 1)
+					text = colors[i / 2];
 				toggleField(i, true, text);
+			}
 			else
+			{
 				toggleField(i, false, "");
+			}
 		}
   }
 
@@ -232,7 +236,7 @@ public class InputGUIDriver extends JFrame
 				|| cmd.equals("4"))
 		{
       if (this.myPlayers != 6)
-        this.myPlay[(this.myPlayers - 1)].setSelected(false);
+        this.myPlay[this.myPlayers - 1].setSelected(false);
       else
         this.myPlay[4].setSelected(false);
 
@@ -289,9 +293,9 @@ public class InputGUIDriver extends JFrame
 				|| cmd.equals("comp3")
 				|| cmd.equals("comp4"))
 		{
-      this.myCompLevels[(this.myCompLevel - 1)].setSelected(false);
-      this.myCompLevel = (cmd.charAt(4) - '/');
-      this.myCompLevels[(this.myCompLevel - 1)].setSelected(true);
+      this.myCompLevels[this.myCompLevel - 1].setSelected(false);
+      this.myCompLevel = cmd.charAt(4) - '/';
+      this.myCompLevels[this.myCompLevel - 1].setSelected(true);
     }
 
 		// User selected "Hexagonal" or "Default" board type
@@ -336,8 +340,8 @@ public class InputGUIDriver extends JFrame
       String[] colors = new String[this.myPlayers];
       for (int i = 0; i < 2 * this.myPlayers; i += 2)
 			{
-        names[(i / 2)] = this.playerColorFields[i].getText();
-        colors[(i / 2)] = this.playerColorFields[(i + 1)].getText();
+        names[i / 2] = this.playerColorFields[i].getText();
+        colors[i / 2] = this.playerColorFields[i + 1].getText();
       }
 
 			// Parse size of board
