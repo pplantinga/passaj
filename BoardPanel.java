@@ -26,6 +26,8 @@ public class BoardPanel extends JPanel
 	private int[] xs;
 	private int[] ys;
 	private List<int[]> walls;
+	private int[] tempPos;
+	private int[] tempWall;
 
 	public BoardPanel()
 	{
@@ -68,6 +70,9 @@ public class BoardPanel extends JPanel
 
     setPreferredSize(new Dimension(this.myWidth, this.myWidth));
     setBackground(Color.gray);
+
+		this.tempPos = new int[] {0, 0};
+		this.tempWall = new int[] {0, 0, 0};
 	}
 
   public void paintComponent(Graphics pen)
@@ -123,17 +128,30 @@ public class BoardPanel extends JPanel
   public void paintPieces(Graphics pen)
   {
 		int adjust = -this.myPieceDiameter / 2;
-    for (int piece = 0; piece < this.myPlayerCount; piece++)
+		int width = this.myPieceDiameter;
+    
+		// Paint all players pieces
+		for (int piece = 0; piece < this.myPlayerCount; piece++)
 		{
 			int x = convertToPix(this.xs[piece], adjust);
 			int y = convertToPix(this.ys[piece], adjust);
-			int width = this.myPieceDiameter;
 
 			// Add a white border by painting a slightly bigger piece
 			// just underneath the piece.
 			pen.setColor(Color.white);
 			pen.fillOval(x - 1, y - 1, width + 2, width + 2);
 			pen.setColor(this.myColors[piece]);
+			pen.fillOval(x, y, width, width);
+		}
+
+		// If there's a temporary piece to indicate where
+		// a player would move, then paint it light gray
+		if (tempPos[0] != 0)
+		{
+			int x = convertToPix(tempPos[0], adjust);
+			int y = convertToPix(tempPos[1], adjust);
+
+			pen.setColor(Color.lightGray);
 			pen.fillOval(x, y, width, width);
 		}
   }
@@ -147,25 +165,34 @@ public class BoardPanel extends JPanel
   {
 		pen.setColor(BoardPanel.WallColor);
 
+		for (int[] wall : this.walls)
+			paintWall(pen, wall);
+
+		if (tempWall[0] != 0)
+		{
+			pen.setColor(BoardPanel.TempWallColor);
+			paintWall(pen, tempWall);
+		}
+  }
+
+	public void paintWall(Graphics pen, int[] wall)
+	{
 		int width = this.myWallWidth;
 		int height = this.myBlockWidth + this.myWallWidth;
 		int adjust = -this.myWallWidth / 2;
-		for (int[] wall : this.walls)
+		if (wall[2] == 1)
 		{
-			if (wall[2] == 1)
-			{
-				int x = this.convertToPix(wall[0], adjust);
-				int y = this.convertToPix(wall[1] - 1, adjust);
-				pen.fillRect(x, y, width, height);
-			}
-			else
-			{
-				int x = this.convertToPix(wall[0] - 1, adjust);
-				int y = this.convertToPix(wall[1], adjust);
-				pen.fillRect(x, y, height, width);
-			}
+			int x = this.convertToPix(wall[0], adjust);
+			int y = this.convertToPix(wall[1] - 1, adjust);
+			pen.fillRect(x, y, width, height);
 		}
-  }
+		else
+		{
+			int x = this.convertToPix(wall[0] - 1, adjust);
+			int y = this.convertToPix(wall[1], adjust);
+			pen.fillRect(x, y, height, width);
+		}
+	}
 
 	public void paintHexBlocks(Graphics pen)
 	{
@@ -361,6 +388,20 @@ public class BoardPanel extends JPanel
 	public void addWall(int[] wall)
 	{
 		this.walls.add(wall);
+	}
+
+	public void setTempPos(int x, int y)
+	{
+		this.tempPos = new int[] {x, y};
+		this.tempWall = new int[] {0, 0, 0};
+		repaint();
+	}
+
+	public void setTempWall(int x, int y, int o)
+	{
+		this.tempWall = new int[] {x, y, o};
+		this.tempPos = new int[] {0, 0};
+		repaint();
 	}
 }
 

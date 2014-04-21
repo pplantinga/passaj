@@ -229,7 +229,20 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseMoved(MouseEvent e)
 	{
-		// TODO Implement this.
+		if (this.myType == "hexagonal")
+		{
+		}
+		else
+		{
+			int x = this.myBoardPanel.pixToPos(e.getX());
+			int y = this.myBoardPanel.pixToPos(e.getY());
+			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+
+			if (o != 0)
+				this.myBoardPanel.setTempWall(x, y, o);
+			else
+				this.myBoardPanel.setTempPos(x, y);
+		}
   }
 
   public void mouseEntered(MouseEvent e)
