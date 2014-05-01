@@ -23,7 +23,6 @@ public class QuoridorGUIDriver extends JFrame
   private JButton quitButton;
   private JPanel myPanel;
   private QuoridorModel myModel;
-  private HexQuoridorModel myHexModel;
 	private BoardPanel myBoardPanel;
   private String myType;
 	private String[] myNames;
@@ -49,21 +48,10 @@ public class QuoridorGUIDriver extends JFrame
 		this.compLevel = compLevel;
 		this.myType = type;
 
-		if (type == "hexagonal")
-		{
-			this.myHexModel = new HexQuoridorModel(this.playerCount, size, compLevel);
-			int[] xs = {this.myHexModel.getColumn(1), this.myHexModel.getColumn(2)};
-			int[] ys = {this.myHexModel.getRow(1), this.myHexModel.getRow(2)};
-			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
-		}
-		else
-		{
-			this.myModel = new QuoridorModel(this.playerCount, size);
-			int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
-			int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
-			this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
-		}
-		
+		this.myModel = new QuoridorModel(this.playerCount, size, type);
+		int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
+		int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
+		this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
 
     initialize();
   }
@@ -156,70 +144,33 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseClicked(MouseEvent e)
 	{
-    if (this.myType == "hexagonal")
+		try
 		{
-      try
-      {
-				int x = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "x");
-				int y = this.myBoardPanel.hexPixToPos(e.getX(), e.getY(), "y");
-				this.myHexModel.move(x, y);
-				int[] xs = {this.myHexModel.getColumn(1), this.myHexModel.getColumn(2)};
-				int[] ys = {this.myHexModel.getRow(1), this.myHexModel.getRow(2)};
-				this.myBoardPanel.setPos(xs, ys);
-				this.myBoardPanel.repaint();
-				
-				if (compLevel != 0)
-					this.myHexModel.moveComp(2);
+			int x = this.myBoardPanel.pixToPos(e.getX());
+			int y = this.myBoardPanel.pixToPos(e.getY());
+			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+			this.myModel.move(x, y, o);
 
-        String fieldText = "";
-        for (int i = 0; i < this.playerCount; i++)
-				{
-          fieldText += this.myNames[i] + " ";
-					fieldText += this.myHexModel.getWallCount(i) + " ";
-				}
+			int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
+			int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
+			this.myBoardPanel.setPos(xs, ys);
+			this.myBoardPanel.repaint();
 
-        fieldText += "  walls left. Player's Turn: "
-					+ this.myNames[this.myHexModel.getPlayer() - 1];
+			if (this.compLevel != 0)
+				this.myModel.ai_move(this.compLevel * 1000);
 
-        this.myField.setText(fieldText);
-      }
-      catch (Exception err)
-      {
-        this.myField.setText(err.getMessage());
-      }
+			String fieldText = "";
+			for (int i = 0; i < this.playerCount; i++)
+				fieldText += this.myNames[i] + " "
+					+ this.myModel.getWallCount(i) + " ";
+
+			fieldText += "  walls left.  Player's Turn: "
+				+ this.myNames[this.myModel.getPlayer()];
+			this.myField.setText(fieldText);
 		}
-
-    // Default board
-		else
+		catch (Exception ex)
 		{
-      try
-      {
-				int x = this.myBoardPanel.pixToPos(e.getX());
-				int y = this.myBoardPanel.pixToPos(e.getY());
-				int o = this.myBoardPanel.orientation(e.getX(), e.getY());
-				this.myModel.move(x, y, o);
-
-				int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
-				int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
-				this.myBoardPanel.setPos(xs, ys);
-        this.myBoardPanel.repaint();
-
-        if (this.compLevel != 0)
-          this.myModel.ai_move(this.compLevel * 1000);
-
-        String fieldText = "";
-				for (int i = 0; i < this.playerCount; i++)
-          fieldText += this.myNames[i] + " "
-						+ this.myModel.getWallCount(i) + " ";
-
-        fieldText += "  walls left.  Player's Turn: "
-					+ this.myNames[this.myModel.getPlayer()];
-        this.myField.setText(fieldText);
-      }
-      catch (Exception ex)
-      {
-        this.myField.setText(ex.getMessage());
-      }
+			this.myField.setText(ex.getMessage());
 		}
   }
 
@@ -229,20 +180,14 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseMoved(MouseEvent e)
 	{
-		if (this.myType == "hexagonal")
-		{
-		}
-		else
-		{
-			int x = this.myBoardPanel.pixToPos(e.getX());
-			int y = this.myBoardPanel.pixToPos(e.getY());
-			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+		int x = this.myBoardPanel.pixToPos(e.getX());
+		int y = this.myBoardPanel.pixToPos(e.getY());
+		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
 
-			if (o != 0)
-				this.myBoardPanel.setTempWall(x, y, o);
-			else
-				this.myBoardPanel.setTempPos(x, y);
-		}
+		if (o != 0)
+			this.myBoardPanel.setTempWall(x, y, o);
+		else
+			this.myBoardPanel.setTempPos(x, y);
   }
 
   public void mouseEntered(MouseEvent e)
@@ -264,5 +209,4 @@ public class QuoridorGUIDriver extends JFrame
   public void mouseDragged(MouseEvent e)
 	{
   }
-
 }
