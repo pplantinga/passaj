@@ -3,6 +3,7 @@ package passaj;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.util.List;
 import java.util.ArrayList;
 import javax.swing.JPanel;
@@ -23,8 +24,7 @@ public class BoardPanel extends JPanel
 	private int myPlayerCount;
 	private String myBoardType;
 	private Color[] myColors;
-	private int[] xs;
-	private int[] ys;
+	private Point[] myLocations;
 	private List<int[]> walls;
 	private int[] tempPos;
 	private int[] tempWall;
@@ -37,7 +37,11 @@ public class BoardPanel extends JPanel
 		initialize();
 	}
 
-	public BoardPanel(String[] colors, String boardType, int boardSize, int[] xs, int[] ys)
+	public BoardPanel(
+		final String[] colors,
+		final String boardType,
+		final int boardSize,
+		final Point[] locations)
 	{
 		this.myPlayerCount = colors.length;
 		this.myColors = new Color[colors.length];
@@ -46,8 +50,7 @@ public class BoardPanel extends JPanel
 
 		this.myBoardType = boardType;
 		this.myBoardSize = boardSize;
-		this.xs = xs;
-		this.ys = ys;
+		this.myLocations = locations;
 
 		initialize();
 	}
@@ -133,8 +136,8 @@ public class BoardPanel extends JPanel
 		// Paint all players pieces
 		for (int piece = 0; piece < this.myPlayerCount; piece++)
 		{
-			int x = convertToPix(this.xs[piece], adjust);
-			int y = convertToPix(this.ys[piece], adjust);
+			int x = convertToPix(this.myLocations[piece].x + 1, adjust);
+			int y = convertToPix(this.myLocations[piece].y + 1, adjust);
 
 			// Add a white border by painting a slightly bigger piece
 			// just underneath the piece.
@@ -235,8 +238,8 @@ public class BoardPanel extends JPanel
 		int width = (this.myRadius - this.myWallWidth) * 2;
 		int adjust = -this.myRadius + this.myWallWidth;
     for (int piece = 0; piece < this.myPlayerCount; piece++) {
-			int x = convertToPix(this.xs[piece], adjust);
-			int y = convertToPix(this.ys[piece] + 1, adjust);
+			int x = convertToPix(this.myLocations[piece].x, adjust);
+			int y = convertToPix(this.myLocations[piece].y + 1, adjust);
 
 			// For a white border, just draw the same thing
 			// slightly bigger and underneath the other.
@@ -379,10 +382,9 @@ public class BoardPanel extends JPanel
 		return number % 2 == 0;
 	}
 
-	public void setPos(int[] xs, int[] ys)
+	public void setLocations(final Point[] locations)
 	{
-		this.xs = xs;
-		this.ys = ys;
+		this.myLocations = locations;
 	}
 
 	public void addWall(int[] wall)

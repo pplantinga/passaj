@@ -183,12 +183,14 @@ public class QuoridorModel
 	/**
 	 * Public move function.
 	 */
-	public void move(int x, int y, int o)
+	public void move(final Point destination)
 	{
-		if (o == 0)
-			movePiece(x, y);
-		else
-			placeWall(x, y, o);
+		movePiece(destination);
+	}
+	
+	public void move(final Point placement, final int o)
+	{
+		placeWall(placement, o);
 	}
 
 	/**
@@ -220,10 +222,10 @@ public class QuoridorModel
 		System.out.println(i);
 		
 		if (move[2] != 0)
-			if (!placeWall(move[0], move[1], move[2]))
+			if (!placeWall(new Point(move[0], move[1]), move[2]))
 				throw wallException;
 		else
-			if (!movePiece(move[0], move[1]))
+			if (!movePiece(new Point(move[0], move[1])))
 				throw wallException;
 	}
 
@@ -249,7 +251,7 @@ public class QuoridorModel
 			// undo wall
 			if (o != 0)
 			{
-				wallVal(x, y, o, 0);
+				wallVal(new Point(x, y), o, 0);
 
 				this.myWallCounts[turn] += 1;
 			}
@@ -273,26 +275,25 @@ public class QuoridorModel
 	 * Checks for move legality, and if legal, moves the player.
 	 *
 	 * Params:
-	 *   x = the desired horizontal location
-	 *   y = the desired vertical location
+	 *   destiantion = the desired location to move the piece to
 	 *
 	 * Returns: whether or not the move occurred 
 	 */
-	boolean movePiece(int x, int y)
+	boolean movePiece(final Point destination)
 	{
-		int turn = this.myTurn % this.myPlayers;
-		Point origin = new Point(this.myLocations[turn]);
+		final int turn = this.myTurn % this.myPlayers;
+		final Point origin = new Point(this.myLocations[turn]);
 
 		if (this.myBoardType == "hexagonal"
-				&& isLegalHexMove(origin, new Point(x, y))
+				&& isLegalHexMove(origin, destination)
 			|| this.myBoardType != "hexagonal"
-				&& isLegalMove(x, y, origin.x, origin.y))
+				&& isLegalMove(origin, destination))
 		{
 			// make the move
-			this.myLocations[turn].x = x;
-			this.myLocations[turn].y = y;
+			this.myLocations[turn].x = destination.x;
+			this.myLocations[turn].y = destination.y;
 			this.myBoard[origin.x][origin.y] = 0;
-			this.myBoard[x][y] = turn + 1;
+			this.myBoard[destination.x][destination.y] = turn + 1;
 
 			// update shortest path length
 			this.pathLengths[turn] = pathLength(turn);
@@ -313,30 +314,30 @@ public class QuoridorModel
 	 * Check if this piece movement is legal.
 	 *
 	 * Params:
-	 *   x, y = potential new location
-	 *   oldX, oldY = current location
+	 *   origin = current location of piece
+	 *   destination = desired new location of piece
 	 *
 	 * Returns:
 	 *   Whether or not the move is legal
 	 */
-	boolean isLegalMove(int x, int y, int oldX, int oldY)
+	boolean isLegalMove(final Point origin, final Point destination)
 	{
 		// Check for out-of-bounds
-		if (!isOnBoard(x, y))
+		if (!isOnBoard(destination))
 			return false;
 
 		// Check if another player is where we're going
-		if (this.myBoard[x][y] != 0)
+		if (this.myBoard[destination.x][destination.y] != 0)
 			return false;
 
 		// jump dist
-		int Xdist = Math.abs(x - oldX);
-		int Ydist = Math.abs(y - oldY);
-		int avgX = (x + oldX) / 2;
-		int avgY = (y + oldY) / 2;
+		int Xdist = Math.abs(destination.x - origin.x);
+		int Ydist = Math.abs(destination.y - origin.y);
+		int avgX = (destination.x + origin.x) / 2;
+		int avgY = (destination.y + origin.y) / 2;
 		int inBetween = this.myBoard[avgX][avgY];
-		int onePastX = x + avgX - oldX;
-		int onePastY = y + avgY - oldY;
+		int onePastX = destination.x + avgX - origin.x;
+		int onePastY = destination.y + avgY - origin.y;
 
 		// normal move: one space away and no wall between
 		if (
@@ -357,16 +358,16 @@ public class QuoridorModel
 					Xdist == 4 && Ydist == 0
 
 					// no wall between players or between opponent and target
-					&& this.myBoard[avgX + 1][oldY] != WALL_VALUE
-					&& this.myBoard[avgX - 1][oldY] != WALL_VALUE
+					&& this.myBoard[avgX + 1][origin.y] != WALL_VALUE
+					&& this.myBoard[avgX - 1][origin.y] != WALL_VALUE
 
 					|| 
 					// two away in the column
 					Ydist == 4 && Xdist == 0
 
 					// no wall between players or between opponent and target
-					&& this.myBoard[oldX][avgY + 1] != WALL_VALUE
-					&& this.myBoard[oldX][avgY - 1] != WALL_VALUE
+					&& this.myBoard[origin.x][avgY + 1] != WALL_VALUE
+					&& this.myBoard[origin.x][avgY - 1] != WALL_VALUE
 				)
 				// opponent between target and active player
 				&& inBetween != 0
@@ -383,31 +384,31 @@ public class QuoridorModel
 				Xdist == 2 && Ydist == 2
 				&& (
 					// opponent above or below
-					this.myBoard[x][oldY] != 0
+					this.myBoard[destination.x][origin.y] != 0
 
 					// wall or the edge is on the far side of opponent
 				 	&& (!isOnBoard(onePastX)
-				 	|| this.myBoard[onePastX][oldY] == WALL_VALUE)
+				 	|| this.myBoard[onePastX][origin.y] == WALL_VALUE)
 				
 					// no wall between you and opponent
-				 	&& this.myBoard[avgX][oldY] != WALL_VALUE
+				 	&& this.myBoard[avgX][origin.y] != WALL_VALUE
 
 					// no wall between opponent and target
-				 	&& this.myBoard[x][avgY] != WALL_VALUE
+				 	&& this.myBoard[destination.x][avgY] != WALL_VALUE
 
 				 	|| 
 					// opponent to one side or the other
-					this.myBoard[oldX][y] != 0
+					this.myBoard[origin.x][destination.y] != 0
 
 					// wall or edge of board beyond opponent
 				 	&& (!isOnBoard(onePastY)
-				 	|| this.myBoard[oldX][onePastY] == WALL_VALUE)
+				 	|| this.myBoard[origin.x][onePastY] == WALL_VALUE)
 				
 					// no wall between players
-				 	&& this.myBoard[oldX][avgY] != WALL_VALUE
+				 	&& this.myBoard[origin.x][avgY] != WALL_VALUE
 
 					// no wall between opponent and target
-				 	&& this.myBoard[avgX][y] != WALL_VALUE
+				 	&& this.myBoard[avgX][destination.x] != WALL_VALUE
 				)
 			)
 		{
@@ -569,31 +570,30 @@ public class QuoridorModel
 	 * Checks for wall legality, and if legal, places the wall.
 	 *
 	 * Params:
-	 *   x = the horizontal location
-	 *   y = the vertical location
+	 *   placement = the desired wall placement location
 	 *   o = the orientation (1 for vertical, 2 for horizontal)
 	 */
-	boolean placeWall(int x, int y, int o)
+	boolean placeWall(Point placement, int o)
 	{
-		if (!isLegalWall(x, y, o))
+		if (!isLegalWall(placement, o))
 			return false;
 
 		// Add the wall for checking both player's paths
-		wallVal(x, y, o, WALL_VALUE);
+		wallVal(placement, o, WALL_VALUE);
 
 		int[] testLengths = new int[this.myPlayers];
 
 		// check if this wall blocks any path
 		for (int i = 0; i < this.myPlayers; i++)
 		{
-			if (wallsInPath[0][linearize(x, y, o)])
+			if (wallsInPath[0][linearize(placement.x, placement.y, o)])
 			{
 				testLengths[i] = pathLength(0);
 
 				if (testLengths[i] == 0)
 				{
 					// remove wall
-					wallVal(x, y, o, 0);
+					wallVal(placement, o, 0);
 					return false;
 				}
 			}
@@ -613,7 +613,7 @@ public class QuoridorModel
 		this.myTurn++;
 
 		// add wall to the list of moves (for undo)
-		this.moves.add(new int[] {x, y, o});
+		this.moves.add(new int[] {placement.x, placement.y, o});
 
 		return true;
 	}
@@ -622,36 +622,36 @@ public class QuoridorModel
 	 * This function helps keep track of walls that would interrupt
 	 * the shortest path, so we can recalculate when necessary.
 	 */
-	void addWalls(int player, int x, int y, int oldX, int oldY)
+	void addWalls(final int player, final Point origin, final Point destination)
 	{
-		int avgX = (x + oldX) / 2;
-		int avgY = (y + oldY) / 2;
+		int avgX = (origin.x + destination.x) / 2;
+		int avgY = (origin.y + destination.y) / 2;
 
 		// horizontal move
-		if (Math.abs(x - oldX) == 2)
+		if (origin.y == destination.y)
 		{
-			if (isOnBoard(y - 1))
-				wallsInPath[player][linearize(avgX, y - 1, 1)] = true;
+			if (isOnBoard(origin.y - 1))
+				wallsInPath[player][linearize(avgX, origin.y - 1, 1)] = true;
 
-			if (isOnBoard(y + 1))
-				wallsInPath[player][linearize(avgX, y + 1, 1)] = true;
+			if (isOnBoard(origin.y + 1))
+				wallsInPath[player][linearize(avgX, origin.y + 1, 1)] = true;
 		}
 
 		// vertical hex move
 		else if (this.myBoardType == "hexagonal")
 		{
-			wallsInPath[player][linearize(x, avgY, 1)] = true;
-			wallsInPath[player][linearize(oldX, avgY, 1)] = true;
+			wallsInPath[player][linearize(origin.x, avgY, 1)] = true;
+			wallsInPath[player][linearize(destination.x, avgY, 1)] = true;
 		}
 
 		// vertical move on normal board
 		else
 		{
-			if (isOnBoard(x - 1))
-				wallsInPath[player][linearize(x - 1, avgY, 2)] = true;
+			if (isOnBoard(origin.x - 1))
+				wallsInPath[player][linearize(origin.x - 1, avgY, 2)] = true;
 
-			if (isOnBoard(x + 1))
-				wallsInPath[player][linearize(x + 1, avgY, 2)] = true;
+			if (isOnBoard(origin.x + 1))
+				wallsInPath[player][linearize(origin.x + 1, avgY, 2)] = true;
 		}
 	}
 	
@@ -667,21 +667,21 @@ public class QuoridorModel
 	 * Asserts a wall is legal.
 	 *
 	 * Params:
-	 *   x = horizontal location of new wall
-	 *   y = vertical location of new wall
-	 *   o = orientation of new wall (vertical, 1, or horizontal, 2)
+	 *   placement = desired location of new wall
+	 *   orientation = orientation of new wall (vertical, 1, or horizontal, 2)
 	 */
-	boolean isLegalWall(final int x, final int y, final int o)
+	boolean isLegalWall(final Point placement, final int orientation)
 	{
 		// Make sure wall isn't in move land
-		assert this.myBoardType == "hexagonal" || !isEven(x) && !isEven(y);
-		assert this.myBoardType != "hexagonal" || !isEven(y);
+		assert this.myBoardType == "hexagonal"
+			|| !isEven(placement.x) && !isEven(placement.y);
+		assert this.myBoardType != "hexagonal" || !isEven(placement.y);
 
 		// Make sure orientation is valid
-		assert o == 1 || o == 2;
+		assert orientation == 1 || orientation == 2;
 
 		// check for out-of-bounds
-		if (!isOnBoard(x, y))
+		if (!isOnBoard(placement))
 			return false;
 
 		// Make sure the player has walls left
@@ -691,24 +691,24 @@ public class QuoridorModel
 		// Hex board walls cannot be immediately next to any other walls
 		if (this.myBoardType == "hexagonal")
 		{
-			final int yAdd = 2 * ((x + y) % 2) - 1;
+			final int yAdd = 2 * ((placement.x + placement.y) % 2) - 1;
 
-			if (this.myBoard[x][y] != 0
-					|| this.myBoard[x][y + yAdd] != 0
-					|| this.myBoard[x - 1][y] != 0
-					|| this.myBoard[x + 1][y] != 0)
+			if (this.myBoard[placement.x][placement.y] != 0
+					|| this.myBoard[placement.x][placement.y + yAdd] != 0
+					|| this.myBoard[placement.x - 1][placement.y] != 0
+					|| this.myBoard[placement.x + 1][placement.y] != 0)
 				return false;
 		}
 
 		// Default board actually fills three locations
 		else
 		{
-			final int xAdd = o - 1;
-			final int yAdd = o % 2;
+			final int xAdd = orientation - 1;
+			final int yAdd = orientation % 2;
 
-			if (this.myBoard[x][y] != 0
-					|| this.myBoard[x + xAdd][y + yAdd] != 0
-					|| this.myBoard[x - xAdd][y - yAdd] != 0)
+			if (this.myBoard[placement.x][placement.y] != 0
+					|| this.myBoard[placement.x + xAdd][placement.y + yAdd] != 0
+					|| this.myBoard[placement.x - xAdd][placement.y - yAdd] != 0)
 				return false;
 		}
 
@@ -716,28 +716,28 @@ public class QuoridorModel
 	}
 
 	/**
-	 * The wall defined by x, y, and o will be set to 'val'.
+	 * The wall defined by placement and o will be set to 'val'.
 	 */
-	void wallVal(final int x, final int y, final int o, final int val)
+	void wallVal(final Point placement, final int orientation, final int val)
 	{
 		// Walls on hex board take up 2 locations.
 		if (this.myBoardType == "hexagonal")
 		{
-			final int yAdd = 2 * ((x + y) % 2) - 1;
+			final int yAdd = 2 * ((placement.x + placement.y) % 2) - 1;
 
-			this.myBoard[x][y] = val;
-			this.myBoard[x][y + yAdd] = val;
+			this.myBoard[placement.x][placement.y] = val;
+			this.myBoard[placement.x][placement.y + yAdd] = val;
 		}
 		
 		// Walls on the default board takes up 3 locations.
 		else
 		{
-			final int xAdd = o - 1;
-			final int yAdd = o % 2;
+			final int xAdd = orientation - 1;
+			final int yAdd = orientation % 2;
 
-			this.myBoard[x][y] = val;
-			this.myBoard[x + xAdd][y + yAdd] = val;
-			this.myBoard[x - xAdd][y - yAdd] = val;
+			this.myBoard[placement.x][placement.y] = val;
+			this.myBoard[placement.x + xAdd][placement.y + yAdd] = val;
+			this.myBoard[placement.x - xAdd][placement.y - yAdd] = val;
 		}
 	}
 
@@ -757,26 +757,17 @@ public class QuoridorModel
 	 *
 	 * This can be called for either default or hexagonal boards.
 	 */
-	boolean isOnBoard(int x, int y)
-	{
-		if (this.myBoardType != "hexagonal")
-			return isOnBoard(x) && isOnBoard(y);
-		else
-			return y >= 0
-				&& y < 2 * this.myBoardSize - 1
-				&& -2 * x + y <= this.myBoardSize - 1
-				&& 2 * x - y <= this.myBoardSize * 3 - 1
-				&& 2 * x + y >= this.myBoardSize + 1
-				&& 2 * x + y <= 5 * this.myBoardSize - 1;
-	}
-
-
-	/**
-	 * Convenience function forwarding to isOnBoard(int, int).
-	 */
 	boolean isOnBoard(Point test)
 	{
-		return isOnBoard(test.x, test.y);
+		if (this.myBoardType != "hexagonal")
+			return isOnBoard(test.x) && isOnBoard(test.y);
+		else
+			return test.y >= 0
+				&& test.y < 2 * this.myBoardSize - 1
+				&& -2 * test.x + test.y <= this.myBoardSize - 1
+				&& 2 * test.x - test.y <= this.myBoardSize * 3 - 1
+				&& 2 * test.x + test.y >= this.myBoardSize + 1
+				&& 2 * test.x + test.y <= 5 * this.myBoardSize - 1;
 	}
 
 	/**
@@ -848,9 +839,9 @@ public class QuoridorModel
 		if (best.length > 1)
 		{
 			if (best[2] == 0)
-				testBoard.movePiece(best[0], best[1]);
+				testBoard.movePiece(new Point(best[0], best[1]));
 			else
-				testBoard.placeWall(best[0], best[1], best[2]);
+				testBoard.placeWall(new Point(best[0], best[1]), best[2]);
 
 			opponentMove = testBoard.negascout(
 				depth - 1,
@@ -872,7 +863,7 @@ public class QuoridorModel
 		for (Point move : legalMoves(origin))
 		{
 			// legal and we haven't checked it already
-			if (isLegalMove(move.x, move.y, origin.x, origin.y)
+			if (isLegalMove(origin, move)
 				 && (best.length < 2
 					 || best[2] != 0
 					 || best[0] != move.x
@@ -881,7 +872,7 @@ public class QuoridorModel
 				)
 			{
 				testBoard = new QuoridorModel(this);
-				testBoard.movePiece(move.x, move.y);
+				testBoard.movePiece(move);
 				
 				/* Don't consider moves that don't shorten our path.
 				 * This is usually bad, and sometimes the computer will make a
@@ -930,15 +921,15 @@ public class QuoridorModel
 			}
 
 			// Check jumps
-			else if (isOnBoard(move.x, move.y)
+			else if (isOnBoard(move)
 				 && this.myBoard[move.x][move.y] != 0)
 			{
 				for (Point jump : legalMoves(move))
 				{
-					if (isLegalMove(jump.x, jump.y, origin.x, origin.y))
+					if (isLegalMove(origin, jump))
 					{
 						testBoard = new QuoridorModel(this);
-						testBoard.movePiece(jump.x, jump.y);
+						testBoard.movePiece(jump);
 	
 						/* Don't consider jumps that make our length longer.
 						 * There can be situations where the only available move is
@@ -1040,10 +1031,10 @@ public class QuoridorModel
 						)
 					{
 						// some testing done twice, but faster to test than allocate
-						if (this.isLegalWall(x, y, o))
+						if (this.isLegalWall(new Point(x, y), o))
 						{
 							testBoard = new QuoridorModel(this);
-							if (testBoard.placeWall(x, y, o))
+							if (testBoard.placeWall(new Point(x, y), o))
 							{
 								score = -testBoard.negascout(
 									depth - 1,
@@ -1104,20 +1095,19 @@ public class QuoridorModel
 		removePlayers(player);
 
 		// get current location
-		int x = this.myLocations[player].x;
-		int y = this.myLocations[player].y;
+		Point location = new Point(this.myLocations[player]);
 
 		// distance from current location
 		int g = 0;
 		
 		// heuristic distance (distance from goal)
-		int h = heuristic(player, x, y);
+		int h = heuristic(player, location);
 
 		// To keep track of where we go
 		int[][] paths = new int[this.myBoardSize][this.myBoardSize];
 		
 		// Starting location
-		paths[x][y] = 1;
+		paths[location.x][location.y] = 1;
 
 		// This is a sort of priority queue, specific to this application
 		// We'll only be adding elements of the same or slightly lower priority
@@ -1125,7 +1115,7 @@ public class QuoridorModel
 		
 		// add first node, current location
 		nodes.put(h, new ArrayList<int[]>());
-		nodes.get(h).add(new int[] {x, y, g});
+		nodes.get(h).add(new int[] {location.x, location.y, g});
 
 		// current stores the node we're using on each iteration
 		int[] current;
@@ -1136,22 +1126,22 @@ public class QuoridorModel
 		while (!nodes.isEmpty())
 		{
 			current = nodes.get(h).remove(0);
-			x = current[0];
-			y = current[1];
+			location.x = current[0];
+			location.y = current[1];
 			g = current[2];
-			h = heuristic(player, x, y);
+			h = heuristic(player, location);
 
 			// if we've reached the end
 			if (h == 0)
 				break;
 
 			// Try all moves
-			for (Point move : legalMoves(new Point(x, y)))
+			for (Point move : legalMoves(location))
 			{
-				if (isLegalMove(move.x, move.y, x, y) && paths[move.x][move.y] == 0)
+				if (isLegalMove(location, move) && paths[move.x][move.y] == 0)
 				{
-					h = heuristic(player, move.x, move.y);
-					paths[move.x][move.y] = 100 * x + y + 2;
+					h = heuristic(player, move);
+					paths[move.x][move.y] = 100 * location.x + location.y + 2;
 
 					if (!nodes.containsKey(g + h + 2))
 						nodes.put(g + h + 2, new ArrayList<int[]>());
@@ -1188,16 +1178,15 @@ public class QuoridorModel
 		for (int i = 0; i < this.wallsInPath[player].length; i++)
 			this.wallsInPath[player][i] = false;
 
-		int oldX;
-		int oldY;
+		Point origin = new Point(location);
 		
-		while (paths[x][y] != 1)
+		while (paths[location.x][location.y] != 1)
 		{
-			oldX = x;
-			oldY = y;
-			x = paths[x][y] / 100;
-			y = paths[oldX][y] % 100 - 2;
-			addWalls(player, x, y, oldX, oldY);
+			origin.x = location.x;
+			origin.y = location.y;
+			location.x = paths[origin.x][origin.y] / 100;
+			location.y = paths[origin.x][origin.y] % 100 - 2;
+			addWalls(player, origin, location);
 		}
 
 		addPlayers(player);
@@ -1258,39 +1247,39 @@ public class QuoridorModel
 	 * This is a heuristic for distance to goal,
 	 * just straight line distance to goal.
 	 */
-	int heuristic(int player, int x, int y)
+	int heuristic(final int player, final Point p)
 	{
 		switch (player)
 		{
 			case 0:
-				return y;
+				return p.y;
 
 			case 1:
 				if (this.myPlayers != 3)
-					return this.myBoardSize * 2 - 1 - y;
+					return this.myBoardSize * 2 - 1 - p.y;
 				else
-					return this.myBoardSize * 3 - 2 * x + y - 2;
+					return this.myBoardSize * 3 - 2 * p.x + p.y - 2;
 
 			case 2:
 				if (this.myBoardType == "hexagonal")
-					return 5 * this.myBoardSize - 2 * x - y - 2;
+					return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
 				else
-					return this.myBoardSize * 2 - 1 - x;
+					return this.myBoardSize * 2 - 1 - p.x;
 
 			case 3:
-				return 5 * this.myBoardSize - 2 * x - y - 2;
+				return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
 
 			case 4:
 				if (this.myBoardType == "hexagonal")
-					return this.myBoardSize - 2 * x - y;
+					return this.myBoardSize - 2 * p.x - p.y;
 				else
-					return x;
+					return p.x;
 
 			case 5:
-				return this.myBoardSize * 3 - 2 * x + y - 2;
+				return this.myBoardSize * 3 - 2 * p.x + p.y - 2;
 
 			case 6:
-				return this.myBoardSize + 2 * x - y - 2;
+				return this.myBoardSize + 2 * p.x - p.y - 2;
 
 			default:
 				assert false;
@@ -1305,7 +1294,7 @@ public class QuoridorModel
 	boolean isGameOver()
 	{
 		for (int i = 0; i < this.myPlayers; i++)
-			if (heuristic(i, this.myLocations[i].x, this.myLocations[i].y) == 0)
+			if (heuristic(i, this.myLocations[i]) == 0)
 				return true;
 		return false;
 	}
@@ -1337,23 +1326,13 @@ public class QuoridorModel
     return this.myTurn % this.myPlayers;
   }
 
-  public int getValue(int x, int y)
-  {
-    return this.myBoard[x][y];
-  }
-
   public int getWallCount(int player)
   {
     return this.myWallCounts[player - 1];
   }
 
-	public int getColumn(int player)
+	public Point[] getLocations()
 	{
-		return this.myLocations[player - 1].x + 1;
-	}
-
-	public int getRow(int player)
-	{
-		return this.myLocations[player - 1].y + 1;
+		return this.myLocations;
 	}
 }

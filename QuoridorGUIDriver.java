@@ -1,6 +1,7 @@
 package passaj;
 
 import java.awt.BorderLayout;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
@@ -49,9 +50,8 @@ public class QuoridorGUIDriver extends JFrame
 		this.myType = type;
 
 		this.myModel = new QuoridorModel(this.playerCount, size, type);
-		int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
-		int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
-		this.myBoardPanel = new BoardPanel(colors, type, size, xs, ys);
+		Point[] locations = this.myModel.getLocations();
+		this.myBoardPanel = new BoardPanel(colors, type, size, locations);
 
     initialize();
   }
@@ -146,14 +146,15 @@ public class QuoridorGUIDriver extends JFrame
 	{
 		try
 		{
-			int x = this.myBoardPanel.pixToPos(e.getX());
-			int y = this.myBoardPanel.pixToPos(e.getY());
+			Point move = new Point(
+				this.myBoardPanel.pixToPos(e.getX()),
+				this.myBoardPanel.pixToPos(e.getY())
+			);
 			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
-			this.myModel.move(x, y, o);
+			this.myModel.move(move, o);
 
-			int[] xs = {this.myModel.getColumn(1), this.myModel.getColumn(2)};
-			int[] ys = {this.myModel.getRow(1), this.myModel.getRow(2)};
-			this.myBoardPanel.setPos(xs, ys);
+			Point[] locations = this.myModel.getLocations();
+			this.myBoardPanel.setLocations(locations);
 			this.myBoardPanel.repaint();
 
 			if (this.compLevel != 0)
