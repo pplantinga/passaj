@@ -331,93 +331,40 @@ public class QuoridorModel
 			return false;
 
 		// jump dist
-		int Xdist = Math.abs(destination.x - origin.x);
-		int Ydist = Math.abs(destination.y - origin.y);
-		int avgX = (destination.x + origin.x) / 2;
-		int avgY = (destination.y + origin.y) / 2;
-		int inBetween = this.myBoard[avgX][avgY];
-		int onePastX = destination.x + avgX - origin.x;
-		int onePastY = destination.y + avgY - origin.y;
+		final int Xdist = Math.abs(destination.x - origin.x);
+		final int Ydist = Math.abs(destination.y - origin.y);
+
+		// In between start and finish
+		final int avgX = (destination.x + origin.x) / 2;
+		final int avgY = (destination.y + origin.y) / 2;
+
+		// One past the destination
+		final int onePastX = destination.x + avgX - origin.x;
+		final int onePastY = destination.y + avgY - origin.y;
 
 		// normal move: one space away and no wall between
-		if (
-			// one space away
-			(Xdist == 2 && Ydist == 0
-			 || Ydist == 2 && Xdist == 0)
-
-			// no wall in-between
-			&& inBetween != WALL_VALUE)
-		{
+		if ((Xdist == 2 && Ydist == 0 || Xdist == 0 && Ydist == 2)
+				&& this.myBoard[avgX][avgY] != WALL_VALUE)
 			return true;
-		}
 
 		// jump in a straight line
-		else if (
-				(
-					// target is two away in the row
-					Xdist == 4 && Ydist == 0
-
-					// no wall between players or between opponent and target
-					&& this.myBoard[avgX + 1][origin.y] != WALL_VALUE
-					&& this.myBoard[avgX - 1][origin.y] != WALL_VALUE
-
-					|| 
-					// two away in the column
-					Ydist == 4 && Xdist == 0
-
-					// no wall between players or between opponent and target
-					&& this.myBoard[origin.x][avgY + 1] != WALL_VALUE
-					&& this.myBoard[origin.x][avgY - 1] != WALL_VALUE
-				)
-				// opponent between target and active player
-				&& inBetween != 0
-			)
-		{
+		final Point jump = new Point(avgX, avgY);
+		if ((Xdist == 4 && Ydist == 0 || Xdist == 0 && Ydist == 4)
+				&& legalJump(origin, jump, destination)) 
 			return true;
-		}
 
-		/*
-		 * jump diagonally if blocked by enemy player and a wall
-		 * or another enemy player and the edge of the board
-		 */
-		else if (
-				Xdist == 2 && Ydist == 2
-				&& (
-					// opponent above or below
-					this.myBoard[destination.x][origin.y] != 0
-
-					// wall or the edge is on the far side of opponent
-				 	&& (!isOnBoard(onePastX)
-				 	|| this.myBoard[onePastX][origin.y] == WALL_VALUE)
-				
-					// no wall between you and opponent
-				 	&& this.myBoard[avgX][origin.y] != WALL_VALUE
-
-					// no wall between opponent and target
-				 	&& this.myBoard[destination.x][avgY] != WALL_VALUE
-
-				 	|| 
-					// opponent to one side or the other
-					this.myBoard[origin.x][destination.y] != 0
-
-					// wall or edge of board beyond opponent
-				 	&& (!isOnBoard(onePastY)
-				 	|| this.myBoard[origin.x][onePastY] == WALL_VALUE)
-				
-					// no wall between players
-				 	&& this.myBoard[origin.x][avgY] != WALL_VALUE
-
-					// no wall between opponent and target
-				 	&& this.myBoard[avgX][destination.x] != WALL_VALUE
-				)
-			)
-		{
+		// jump diagonally
+		final Point jump1 = new Point(origin.x, destination.y);
+		final Point jump2 = new Point(destination.x, origin.y);
+		final Point jump1wall = new Point(origin.x, onePastY);
+		final Point jump2wall = new Point(onePastX, origin.y);
+		if (Xdist == 2 && Ydist == 2
+			&& (legalJump(origin, jump1, destination, jump1wall)
+				|| legalJump(origin, jump2, destination, jump2wall)))
 			return true;
-		}
-		else
-		{
-			return false;
-		}
+
+		// Failed to find a valid way to make that move
+		return false;
 	}
 
 	/**
@@ -446,7 +393,6 @@ public class QuoridorModel
 		// The middle ground
 		final int avgX = (destination.x + origin.x) / 2;
 		final int avgY = (destination.y + origin.y) / 2;
-		final int inBetween = this.myBoard[avgX][avgY];
 		
 		// Which direction are we moving in?
 		final int Xdir = (destination.x - origin.x) / Xdist;
@@ -547,20 +493,25 @@ public class QuoridorModel
 		// Assure we're only one space away
 		assert Math.abs(destination.x - origin.x) == 2
 			&& Math.abs(destination.y - origin.y) == 0
-			|| Math.abs(destination.x - origin.x) == 1
+			|| this.myBoardType == "hexagonal"
+			&& Math.abs(destination.x - origin.x) == 1
+			&& Math.abs(destination.y - origin.y) == 2
+			|| this.myBoardType != "hexagonal"
+			&& Math.abs(destination.x - origin.x) == 0
 			&& Math.abs(destination.y - origin.y) == 2;
 
 		final int avgX = (origin.x + destination.x) / 2;
 		final int avgY = (origin.y + destination.y) / 2;
 
-		// If we're going horizontally by two board units
+		// Horizontal move
 		if (origin.y == destination.y)
-			return isOnBoard(origin.y + 1)
-					&& this.myBoard[avgX][origin.y + 1] == WALL_VALUE
-				|| isOnBoard(origin.y - 1)
-					&& this.myBoard[avgX][origin.y - 1] == WALL_VALUE;
+			return this.myBoard[avgX][origin.y] == WALL_VALUE;
 
-		// Otherwise we're going two up and one over
+		// Normal board, vertical move
+		else if (this.myBoardType != "hexagonal")
+			return this.myBoard[origin.x][avgY] == WALL_VALUE;
+
+		// Hexagonal board, vertical move
 		else
 			return this.myBoard[origin.x][avgY] == WALL_VALUE
 				|| this.myBoard[destination.x][avgY] == WALL_VALUE;
