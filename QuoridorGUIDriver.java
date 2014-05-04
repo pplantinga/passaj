@@ -146,16 +146,14 @@ public class QuoridorGUIDriver extends JFrame
 	{
 		try
 		{
-			Point move = new Point(
-				this.myBoardPanel.pixToPos(e.getX()),
-				this.myBoardPanel.pixToPos(e.getY())
-			);
+			Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
 			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
-			this.myModel.move(move, o);
+			System.out.println(wall.x + " " + wall.y + " " + o);
+			//this.myModel.move(move, o);
 
-			Point[] locations = this.myModel.getLocations();
-			this.myBoardPanel.setLocations(locations);
-			this.myBoardPanel.repaint();
+			//Point[] locations = this.myModel.getLocations();
+			//this.myBoardPanel.setLocations(locations);
+			//this.myBoardPanel.repaint();
 
 			if (this.compLevel != 0)
 				this.myModel.ai_move(this.compLevel * 1000);
@@ -181,14 +179,10 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseMoved(MouseEvent e)
 	{
-		int x = this.myBoardPanel.pixToPos(e.getX());
-		int y = this.myBoardPanel.pixToPos(e.getY());
+		Point tempWall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
 		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
 
-		if (o != 0)
-			this.myBoardPanel.setTempWall(x, y, o);
-		else
-			this.myBoardPanel.setTempPos(x, y);
+		this.myBoardPanel.setTempWall(tempWall, o);
   }
 
   public void mouseEntered(MouseEvent e)

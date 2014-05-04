@@ -182,16 +182,16 @@ public class BoardPanel extends JPanel
 	{
 		int width = this.myWallWidth;
 		int height = 2 * this.myBlockWidth + this.myWallWidth;
-		int adjust = -this.myWallWidth / 2 - 1;
+		int adjust = this.myBlockWidth / 2;
 		if (wall[2] == 1)
 		{
 			int x = this.convertToPix(wall[0], adjust);
-			int y = this.convertToPix(wall[1], adjust * 4);
+			int y = this.convertToPix(wall[1], -adjust);
 			pen.fillRect(x, y, width, height);
 		}
 		else
 		{
-			int x = this.convertToPix(wall[0], adjust * 4);
+			int x = this.convertToPix(wall[0], -adjust);
 			int y = this.convertToPix(wall[1], adjust);
 			pen.fillRect(x, y, height, width);
 		}
@@ -313,7 +313,7 @@ public class BoardPanel extends JPanel
 	/**
 	 * Interpret a mouse location as a position on the board.
 	 */
-  public int pixToPos(int pix)
+  /*public int pixToPos(int pix)
   {
     for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
       if ((pix > this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (pix <= this.myWidth * i / this.myBoardSize - this.myWallWidth / 2))
@@ -322,16 +322,31 @@ public class BoardPanel extends JPanel
         return i * 2 - 2;
     }
     throw new IllegalArgumentException("Click somewhere ON the board.");
-  }
+  }*/
 
-	public int orientation(int xpix, int ypix)
+	private int pixToPos(final int pix)
 	{
-		if (!isEven(pixToPos(xpix)) && isEven(pixToPos(ypix)))
-			return 2;
-		else if (isEven(pixToPos(xpix)) && !isEven(pixToPos(ypix)))
-			return 1;
-		else
-			return 0;
+		return (pix * this.myBoardSize / this.myWidth);
+	}
+
+	private int pixToWallPos(final int pix)
+	{
+		return pixToPos(pix - this.myBlockWidth / 2) * 2 + 1;
+	}
+
+	/**
+	 * Interpret a mouse location (in pixels) as a wall on the board.
+	 */
+	public Point pixToWallPoint(final int x, final int y)
+	{
+		return new Point(pixToWallPos(x), pixToWallPos(y));
+	}
+
+	public int orientation(final int x, final int y)
+	{
+		final int xplusy = pixToPos(x + y) % 2;
+		final int xminusy = pixToPos(this.myWidth + x - y) % 2;
+		return (xplusy + xminusy) % 2 + 1;
 	}
 
   public int hexPixToPos(int x, int y, String which)
@@ -399,9 +414,9 @@ public class BoardPanel extends JPanel
 		repaint();
 	}
 
-	public void setTempWall(int x, int y, int o)
+	public void setTempWall(Point wall, int o)
 	{
-		this.tempWall = new int[] {x, y, o};
+		this.tempWall = new int[] {wall.x, wall.y, o};
 		this.tempPos = new int[] {0, 0};
 		repaint();
 	}
