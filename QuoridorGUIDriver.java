@@ -144,33 +144,26 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseClicked(MouseEvent e)
 	{
-		try
-		{
-			Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
-			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
-			System.out.println(wall.x + " " + wall.y + " " + o);
-			//this.myModel.move(move, o);
+		Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
+		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
 
-			//Point[] locations = this.myModel.getLocations();
-			//this.myBoardPanel.setLocations(locations);
-			//this.myBoardPanel.repaint();
+		if (this.myModel.move(wall, o))
+			this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
 
-			if (this.compLevel != 0)
-				this.myModel.ai_move(this.compLevel * 1000);
+		//Point[] locations = this.myModel.getLocations();
+		//this.myBoardPanel.setLocations(locations);
 
-			String fieldText = "";
-			for (int i = 0; i < this.playerCount; i++)
-				fieldText += this.myNames[i] + " "
-					+ this.myModel.getWallCount(i) + " ";
+		if (this.compLevel != 0)
+			this.myModel.ai_move(this.compLevel * 1000);
 
-			fieldText += "  walls left.  Player's Turn: "
-				+ this.myNames[this.myModel.getPlayer()];
-			this.myField.setText(fieldText);
-		}
-		catch (Exception ex)
-		{
-			this.myField.setText(ex.getMessage());
-		}
+		String fieldText = "";
+		for (int i = 0; i < this.playerCount; i++)
+			fieldText += this.myNames[i] + " "
+				+ this.myModel.getWallCount(i) + " ";
+
+		fieldText += "  walls left.  Player's Turn: "
+			+ this.myNames[this.myModel.getPlayer()];
+		this.myField.setText(fieldText);
   }
 
 	/**
@@ -182,7 +175,8 @@ public class QuoridorGUIDriver extends JFrame
 		Point tempWall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
 		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
 
-		this.myBoardPanel.setTempWall(tempWall, o);
+		if (this.myModel.isLegalWall(tempWall, o))
+			this.myBoardPanel.setTempWall(tempWall, o);
   }
 
   public void mouseEntered(MouseEvent e)

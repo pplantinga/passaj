@@ -14,7 +14,7 @@ public class QuoridorModel
 	private Point[] myLocations;
   private int[][] myBoard;
   private int[] myWallCounts;
-	private int[] pathLengths;
+	private int[] myPathLengths;
 	private int[] myOpenings;
   private int myTurn;
   private int myBoardSize;
@@ -34,6 +34,7 @@ public class QuoridorModel
 		this.myBoardType = "default";
     this.myWallNumber = numberOfWalls(9, 2);
     this.myWallCounts = new int[] { this.myWallNumber, this.myWallNumber };
+    this.myPathLengths = new int[] { pathLength(0), pathLength(1) };
 
     initialize();
   }
@@ -48,8 +49,10 @@ public class QuoridorModel
 		this.myWallNumber = m.myWallNumber;
 
     this.myWallCounts = new int[this.myPlayers];
+		this.myPathLengths = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCounts[i] = m.myWallCounts[i];
+			this.myPathLengths[i] = m.myPathLengths[i];
     }
 
     initialize();
@@ -72,6 +75,7 @@ public class QuoridorModel
    	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
 
     this.myWallCounts = new int[this.myPlayers];
+		this.myPathLengths = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCounts[i] = this.myWallNumber;
     }
@@ -85,7 +89,7 @@ public class QuoridorModel
 	 */
 	private int numberOfWalls(int boardSize, int players)
 	{
-		return (int)Math.round(Math.pow(boardSize - 1, 2.0) * 5.0/16.0/players);
+		return (boardSize - 1) * (boardSize - 1) * 5 / 16 / players;
 	}
 
 	/**
@@ -119,7 +123,7 @@ public class QuoridorModel
 		this.moves = new ArrayList<int[]>();
 
 		// Start keeping track of walls in my path.
-		this.wallsInPath = new boolean[half * half * 2][2];
+		this.wallsInPath = new boolean[2][half * half * 2];
   }
 
 	/**
@@ -183,14 +187,14 @@ public class QuoridorModel
 	/**
 	 * Public move function.
 	 */
-	public void move(final Point destination)
+	public boolean move(final Point destination)
 	{
-		movePiece(destination);
+		return movePiece(destination);
 	}
 	
-	public void move(final Point placement, final int o)
+	public boolean move(final Point placement, final int o)
 	{
-		placeWall(placement, o);
+		return placeWall(placement, o);
 	}
 
 	/**
@@ -265,9 +269,9 @@ public class QuoridorModel
 				this.myLocations[turn].y = y;
 			}
 
-			this.pathLengths = new int[this.myPlayers];
+			this.myPathLengths = new int[this.myPlayers];
 			for (int j = 0; j < this.myPlayers; j++)
-				this.pathLengths[j] = this.pathLength(j);
+				this.myPathLengths[j] = this.pathLength(j);
 		}
 	}
 
@@ -296,7 +300,7 @@ public class QuoridorModel
 			this.myBoard[destination.x][destination.y] = turn + 1;
 
 			// update shortest path length
-			this.pathLengths[turn] = pathLength(turn);
+			this.myPathLengths[turn] = pathLength(turn);
 
 			// update turn
 			this.myTurn++;
@@ -554,7 +558,7 @@ public class QuoridorModel
 		for (int i = 0; i < this.myPlayers; i++)
 		{
 			if (testLengths[i] != 0)
-				this.pathLengths[i] = testLengths[i];
+				this.myPathLengths[i] = testLengths[i];
 		}
 		
 		// Reduce the walls remaining
@@ -740,8 +744,8 @@ public class QuoridorModel
 			won
 			 - this.myWallCounts[0]
 			 + this.myWallCounts[1]
-			 + 2 * this.pathLengths[0]
-			 - 2 * this.pathLengths[1]
+			 + 2 * this.myPathLengths[0]
+			 - 2 * this.myPathLengths[1]
 		);
 	}
 
@@ -779,7 +783,7 @@ public class QuoridorModel
 		int bestO = 0;
 		int score = 0;
 		final Point origin = this.myLocations[this.myTurn % 2];
-		final int oldPathLength = this.pathLengths[this.myTurn % 2];
+		final int oldPathLength = this.myPathLengths[this.myTurn % 2];
 		final int opponentX = this.myLocations[(this.myTurn + 1) % 2].x;
 		final int opponentY = this.myLocations[(this.myTurn + 1) % 2].y;
 		boolean first = true;
@@ -829,7 +833,7 @@ public class QuoridorModel
 				 * This is usually bad, and sometimes the computer will make a
 				 * dumb move to avoid getting blocked by a wall.
 				 */
-				if (testBoard.pathLengths[this.myTurn % 2] >= oldPathLength)
+				if (testBoard.myPathLengths[this.myTurn % 2] >= oldPathLength)
 					continue;
 
 				opponentMove = testBoard.negascout(
@@ -886,7 +890,7 @@ public class QuoridorModel
 						 * There can be situations where the only available move is
 						 * a jump that doesn't make our path shorter, so examine those.
 						 */
-						if (testBoard.pathLengths[this.myTurn % 2] > oldPathLength)
+						if (testBoard.myPathLengths[this.myTurn % 2] > oldPathLength)
 							continue;
 
 						opponentMove = testBoard.negascout(
@@ -1271,19 +1275,26 @@ public class QuoridorModel
 
   public int getPlayer()
   {
-    if (this.myTurn % this.myPlayers == 0) {
-      return this.myPlayers;
-    }
     return this.myTurn % this.myPlayers;
   }
 
   public int getWallCount(int player)
   {
-    return this.myWallCounts[player - 1];
+    return this.myWallCounts[player];
   }
 
 	public Point[] getLocations()
 	{
 		return this.myLocations;
+	}
+
+	public void print()
+	{
+		for (int[] row : this.myBoard)
+		{
+			for (int i : row)
+				System.out.print(i);
+			System.out.println();
+		}
 	}
 }
