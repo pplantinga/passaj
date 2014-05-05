@@ -26,7 +26,7 @@ public class BoardPanel extends JPanel
 	private Color[] myColors;
 	private Point[] myLocations;
 	private List<int[]> walls;
-	private int[] tempPos;
+	private Point[] tempPos;
 	private int[] tempWall;
 
 	public BoardPanel()
@@ -74,7 +74,7 @@ public class BoardPanel extends JPanel
     setPreferredSize(new Dimension(this.myWidth, this.myWidth));
     setBackground(Color.gray);
 
-		this.tempPos = new int[] {0, 0};
+		this.tempPos = new Point[0];
 		this.tempWall = new int[] {0, 0, 0};
 	}
 
@@ -147,13 +147,12 @@ public class BoardPanel extends JPanel
 			pen.fillOval(x, y, width, width);
 		}
 
-		// If there's a temporary piece to indicate where
-		// a player would move, then paint it light gray
-		if (tempPos[0] != 0)
+		// If there are temporary pieces to indicate where
+		// a player can move, then paint them light gray
+		for (Point piece : tempPos)
 		{
-			int x = convertToPix(tempPos[0], adjust);
-			int y = convertToPix(tempPos[1], adjust);
-
+			int x = convertToPix(piece.x + 1, adjust);
+			int y = convertToPix(piece.y + 1, adjust);
 			pen.setColor(Color.lightGray);
 			pen.fillOval(x, y, width, width);
 		}
@@ -342,6 +341,11 @@ public class BoardPanel extends JPanel
 		return new Point(pixToWallPos(x), pixToWallPos(y));
 	}
 
+	public Point pixToMovePoint(final int x, final int y)
+	{
+		return new Point(pixToPos(x) * 2, pixToPos(y) * 2);
+	}
+
 	public int orientation(final int x, final int y)
 	{
 		final int xplusy = pixToPos(x + y) % 2;
@@ -400,24 +404,26 @@ public class BoardPanel extends JPanel
 	public void setLocations(final Point[] locations)
 	{
 		this.myLocations = locations;
+		repaint();
 	}
 
 	public void addWall(int[] wall)
 	{
 		this.walls.add(wall);
-	}
-
-	public void setTempPos(int x, int y)
-	{
-		this.tempPos = new int[] {x, y};
-		this.tempWall = new int[] {0, 0, 0};
 		repaint();
 	}
 
 	public void setTempWall(Point wall, int o)
 	{
 		this.tempWall = new int[] {wall.x, wall.y, o};
-		this.tempPos = new int[] {0, 0};
+		this.tempPos = new Point[0];
+		repaint();
+	}
+
+	public void showMoves(Point[] moves)
+	{
+		this.tempPos = moves;
+		this.tempWall = new int[] {0, 0, 0};
 		repaint();
 	}
 }

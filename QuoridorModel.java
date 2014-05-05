@@ -704,7 +704,7 @@ public class QuoridorModel
 	 */
 	boolean isOnBoard(int d)
 	{
-		return 0 <= d && d < this.myBoardSize * 2 + 1;
+		return 0 <= d && d < this.myBoardSize * 2 - 1;
 	}
 
 	/**
@@ -1059,7 +1059,7 @@ public class QuoridorModel
 		int h = heuristic(player, location);
 
 		// To keep track of where we go
-		int[][] paths = new int[this.myBoardSize][this.myBoardSize];
+		int[][] paths = new int[this.myBoardSize * 2][this.myBoardSize * 2];
 		
 		// Starting location
 		paths[location.x][location.y] = 1;
@@ -1080,7 +1080,7 @@ public class QuoridorModel
 		// while there are nodes left to evaluate
 		while (!nodes.isEmpty())
 		{
-			current = nodes.get(h).remove(0);
+			current = nodes.get(key).remove(0);
 			location.x = current[0];
 			location.y = current[1];
 			g = current[2];
@@ -1151,7 +1151,7 @@ public class QuoridorModel
 	/**
 	 * List all legal moves.
 	 */
-	Point[] legalMoves(Point origin)
+	public Point[] legalMoves(Point origin)
 	{
 		if (this.myBoardType == "hexagonal")
 			return new Point[] {

@@ -26,6 +26,7 @@ public class QuoridorGUIDriver extends JFrame
   private QuoridorModel myModel;
 	private BoardPanel myBoardPanel;
   private String myType;
+	private String myMode;
 	private String[] myNames;
 	private String[] myColors;
 	private int playerCount;
@@ -144,14 +145,36 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseClicked(MouseEvent e)
 	{
-		Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
-		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+		Point move = this.myBoardPanel.pixToMovePoint(e.getX(), e.getY());
 
-		if (this.myModel.move(wall, o))
-			this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
+		Point[] locations = this.myModel.getLocations();
+		Point player = locations[this.myModel.getPlayer()];
 
-		//Point[] locations = this.myModel.getLocations();
-		//this.myBoardPanel.setLocations(locations);
+		if (this.myMode == "move")
+		{
+			if (this.myModel.move(move))
+				this.myBoardPanel.setLocations(locations);
+
+			this.myMode = "wall";
+
+			// Erase temporary pieces
+			this.myBoardPanel.showMoves(new Point[0]);
+		}
+		else if (move.x == player.x
+			&& move.y == player.y)
+		{
+			this.myMode = "move";
+			Point[] legalMoves = this.myModel.legalMoves(player);
+			this.myBoardPanel.showMoves(legalMoves);
+		}
+		else
+		{
+			Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
+			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+
+			if (this.myModel.move(wall, o))
+				this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
+		}
 
 		if (this.compLevel != 0)
 			this.myModel.ai_move(this.compLevel * 1000);
@@ -172,11 +195,27 @@ public class QuoridorGUIDriver extends JFrame
 	 */
   public void mouseMoved(MouseEvent e)
 	{
-		Point tempWall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
-		int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+		Point move = this.myBoardPanel.pixToMovePoint(e.getX(), e.getY());
 
-		if (this.myModel.isLegalWall(tempWall, o))
-			this.myBoardPanel.setTempWall(tempWall, o);
+		Point[] locations = this.myModel.getLocations();
+		Point player = locations[this.myModel.getPlayer()];
+
+		if (myMode == "move")
+		{
+			// TODO show the player what his move would be
+		}
+		else if (move.x == player.x && move.y == player.y)
+		{
+			this.myBoardPanel.setTempWall(new Point(0, 0), 0);
+		}
+		else
+		{
+			Point tempWall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
+			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+
+			if (this.myModel.isLegalWall(tempWall, o))
+				this.myBoardPanel.setTempWall(tempWall, o);
+		}
   }
 
   public void mouseEntered(MouseEvent e)
