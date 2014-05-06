@@ -150,6 +150,8 @@ public class QuoridorGUIDriver extends JFrame
 		Point[] locations = this.myModel.getLocations();
 		Point player = locations[this.myModel.getPlayer()];
 
+		boolean aimove = true;
+
 		if (this.myMode == "move")
 		{
 			if (this.myModel.move(move))
@@ -166,6 +168,7 @@ public class QuoridorGUIDriver extends JFrame
 			this.myMode = "move";
 			Point[] legalMoves = this.myModel.legalMoves(player);
 			this.myBoardPanel.showMoves(legalMoves);
+			aimove = false;
 		}
 		else
 		{
@@ -176,8 +179,20 @@ public class QuoridorGUIDriver extends JFrame
 				this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
 		}
 
-		if (this.compLevel != 0)
-			this.myModel.ai_move(this.compLevel * 1000);
+		if (this.compLevel != 0 && aimove)
+		{
+			int[] themove = this.myModel.ai_move(this.compLevel * 1000);
+
+			if (themove[2] == 0)
+			{
+				locations = this.myModel.getLocations();
+				this.myBoardPanel.setLocations(locations);
+			}
+			else
+			{
+				this.myBoardPanel.addWall(themove);
+			}
+		}
 
 		String fieldText = "";
 		for (int i = 0; i < this.playerCount; i++)

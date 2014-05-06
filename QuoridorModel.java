@@ -48,14 +48,17 @@ public class QuoridorModel
 		this.myBoardType = m.myBoardType;
 		this.myWallNumber = m.myWallNumber;
 
+    initialize();
+
     this.myWallCounts = new int[this.myPlayers];
 		this.myPathLengths = new int[this.myPlayers];
-    for (int i = 0; i < this.myPlayers; i++) {
+		this.myLocations = new Point[this.myPlayers];
+		for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCounts[i] = m.myWallCounts[i];
 			this.myPathLengths[i] = m.myPathLengths[i];
+			this.myLocations[i] = new Point(m.myLocations[i]);
     }
 
-    initialize();
     this.myBoard = deepCopy(m.myBoard);
     this.myTurn = m.myTurn;
   }
@@ -74,13 +77,14 @@ public class QuoridorModel
 		this.myBoardType = type;
    	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
 
+    initialize();
+
     this.myWallCounts = new int[this.myPlayers];
 		this.myPathLengths = new int[this.myPlayers];
     for (int i = 0; i < this.myPlayers; i++) {
       this.myWallCounts[i] = this.myWallNumber;
+			this.myPathLengths[i] = pathLength(i);
     }
-
-    initialize();
   }
 
 	/**
@@ -98,14 +102,6 @@ public class QuoridorModel
   public void initialize()
   {
     this.myTurn = 0;
-
-		// Exceptions
-    this.wallException = new IllegalArgumentException(
-			"There is a wall between where you are and where you want to be.");
-    this.wallFilled = new IllegalArgumentException(
-			"There is a wall already there!");
-    this.blockException = new IllegalArgumentException(
-			"You may not block anybody from getting to their goal row");
 
 		// Initialize the board
 		int half = this.myBoardSize - 1;
@@ -203,20 +199,20 @@ public class QuoridorModel
 	 * Params:
 	 *   millis = the length of time to search moves in milliseconds
 	 */
-	void ai_move(long millis)
+	int[] ai_move(long millis)
 	{
-		int i = 2;
-		int[] move = new int[] {0, 0, 0};
+		int i = 1;
+		int[] move = null;
 		int[] testMove;
 		long t0 = System.currentTimeMillis();
-		QuoridorModel testModel = new QuoridorModel(this);
 		
 		// iterative deepening
-		while (i < 100)
+		while (i < 15)
 		{
+			QuoridorModel testModel = new QuoridorModel(this);
 			testMove = testModel.negascout(i, -1000, 1000, millis, t0, move);
 			i += 1;
-			if (System.currentTimeMillis() - t0 > millis && i < 100)
+			if (System.currentTimeMillis() - t0 < millis && i < 100)
 				move = testMove;
 			else
 				break;
@@ -224,13 +220,21 @@ public class QuoridorModel
 
 		// Print the level that we got to
 		System.out.println(i);
+		printrow(move);
 		
 		if (move[2] != 0)
+		{
+			System.out.println("Placing wall");
 			if (!placeWall(new Point(move[0], move[1]), move[2]))
-				throw wallException;
+				System.out.println("Illegal move:" + move[0] + " " + move[1] + " " + move[2]);
+		}
 		else
+		{
+			System.out.println("Moving piece");
 			if (!movePiece(new Point(move[0], move[1])))
-				throw wallException;
+				System.out.println("Illegal move:" + move[0] + " " + move[1]);
+		}
+		return move;
 	}
 
 	/**
@@ -629,8 +633,9 @@ public class QuoridorModel
 	{
 		// Make sure wall isn't in move land
 		assert this.myBoardType == "hexagonal"
-			|| !isEven(placement.x) && !isEven(placement.y);
-		assert this.myBoardType != "hexagonal" || !isEven(placement.y);
+			|| !isEven(placement.x) && !isEven(placement.y) : "Invalid wall";
+		assert this.myBoardType != "hexagonal"
+			|| !isEven(placement.y) : "Invalid wall";
 
 		// Make sure orientation is valid
 		assert orientation == 1 || orientation == 2;
@@ -736,9 +741,9 @@ public class QuoridorModel
 	int evaluate()
 	{
 		int won = 0;
-		if (this.myLocations[0].y == 0)
+		if (heuristic(0, this.myLocations[0]) == 0)
 			won = -100;
-		if (this.myLocations[1].y == this.myBoardSize - 1)
+		if (heuristic(1, this.myLocations[1]) == 0)
 			won = 100;
 		return (
 			won
@@ -791,7 +796,7 @@ public class QuoridorModel
 
 		// We'll only do this for the root node, where we
 		// have a best move recorded
-		if (best.length > 1)
+		if (best != null)
 		{
 			if (best[2] == 0)
 				testBoard.movePiece(new Point(best[0], best[1]));
@@ -819,7 +824,7 @@ public class QuoridorModel
 		{
 			// legal and we haven't checked it already
 			if (isLegalMove(origin, move)
-				 && (best.length < 2
+				 && (best == null
 					 || best[2] != 0
 					 || best[0] != move.x
 					 || best[1] != move.y
@@ -982,7 +987,7 @@ public class QuoridorModel
 
 							// check all walls in the first case
 							// for obvious moves that we might otherwise miss
-							|| best.length == 1
+							|| best != null
 						)
 					{
 						// some testing done twice, but faster to test than allocate
@@ -1096,7 +1101,7 @@ public class QuoridorModel
 				if (isLegalMove(location, move) && paths[move.x][move.y] == 0)
 				{
 					h = heuristic(player, move);
-					paths[move.x][move.y] = 100 * location.x + location.y + 2;
+					paths[move.x][move.y] = 1000 * location.x + location.y + 2;
 
 					if (!nodes.containsKey(g + h + 2))
 						nodes.put(g + h + 2, new ArrayList<int[]>());
@@ -1139,8 +1144,8 @@ public class QuoridorModel
 		{
 			origin.x = location.x;
 			origin.y = location.y;
-			location.x = paths[origin.x][origin.y] / 100;
-			location.y = paths[origin.x][origin.y] % 100 - 2;
+			location.x = paths[origin.x][origin.y] / 1000;
+			location.y = paths[origin.x][origin.y] % 1000 - 2;
 			addWalls(player, origin, location);
 		}
 
@@ -1207,11 +1212,11 @@ public class QuoridorModel
 		switch (player)
 		{
 			case 0:
-				return p.y;
+				return this.myBoardSize * 2 - 2 - p.y;
 
 			case 1:
 				if (this.myPlayers != 3)
-					return this.myBoardSize * 2 - 1 - p.y;
+					return p.y;
 				else
 					return this.myBoardSize * 3 - 2 * p.x + p.y - 2;
 
@@ -1219,7 +1224,7 @@ public class QuoridorModel
 				if (this.myBoardType == "hexagonal")
 					return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
 				else
-					return this.myBoardSize * 2 - 1 - p.x;
+					return this.myBoardSize * 2 - 2 - p.x;
 
 			case 3:
 				return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
@@ -1291,10 +1296,13 @@ public class QuoridorModel
 	public void print()
 	{
 		for (int[] row : this.myBoard)
-		{
-			for (int i : row)
-				System.out.print(i);
-			System.out.println();
-		}
+			printrow(row);
+	}
+
+	public void printrow(int[] row)
+	{
+		for (int i : row)
+			System.out.print(i + " ");
+		System.out.println();
 	}
 }
