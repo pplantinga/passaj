@@ -15,15 +15,11 @@ public class QuoridorModel
   private int[][] myBoard;
   private int[] myWallCounts;
 	private int[] myPathLengths;
-	private int[] myOpenings;
   private int myTurn;
   private int myBoardSize;
   private int myPlayers;
   private int myWallNumber;
 	private String myBoardType;
-  private IllegalArgumentException wallException;
-  private IllegalArgumentException wallFilled;
-  private IllegalArgumentException blockException;
 	private List<int[]> moves;
 	private boolean[][] wallsInPath;
 
@@ -32,35 +28,8 @@ public class QuoridorModel
     this.myBoardSize = 9;
     this.myPlayers = 2;
 		this.myBoardType = "default";
-    this.myWallNumber = numberOfWalls(9, 2);
-    this.myWallCounts = new int[] { this.myWallNumber, this.myWallNumber };
-    this.myPathLengths = new int[] { pathLength(0), pathLength(1) };
 
     initialize();
-  }
-
-	/**
-	 * Dupicates an instance of a quoridor model.
-	 */
-  public QuoridorModel(QuoridorModel m) {
-    this.myBoardSize = m.myBoardSize;
-    this.myPlayers = m.myPlayers;
-		this.myBoardType = m.myBoardType;
-		this.myWallNumber = m.myWallNumber;
-
-    initialize();
-
-    this.myWallCounts = new int[this.myPlayers];
-		this.myPathLengths = new int[this.myPlayers];
-		this.myLocations = new Point[this.myPlayers];
-		for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCounts[i] = m.myWallCounts[i];
-			this.myPathLengths[i] = m.myPathLengths[i];
-			this.myLocations[i] = new Point(m.myLocations[i]);
-    }
-
-    this.myBoard = deepCopy(m.myBoard);
-    this.myTurn = m.myTurn;
   }
 
 	/**
@@ -75,16 +44,32 @@ public class QuoridorModel
     this.myBoardSize = size;
 		this.myPlayers = playerCount;
 		this.myBoardType = type;
-   	this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
+
+    initialize();
+  }
+
+	/**
+	 * Dupicates an instance of a quoridor model.
+	 */
+  public QuoridorModel(QuoridorModel m) {
+    this.myBoardSize = m.myBoardSize;
+    this.myPlayers = m.myPlayers;
+		this.myBoardType = m.myBoardType;
 
     initialize();
 
-    this.myWallCounts = new int[this.myPlayers];
-		this.myPathLengths = new int[this.myPlayers];
-    for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCounts[i] = this.myWallNumber;
-			this.myPathLengths[i] = pathLength(i);
+		// Override default values with values from the old model 
+		for (int i = 0; i < this.myPlayers; i++) {
+      this.myWallCounts[i] = m.myWallCounts[i];
+			this.myPathLengths[i] = m.myPathLengths[i];
+			this.myLocations[i] = new Point(m.myLocations[i]);
+
+			for (int j = 0; j < this.wallsInPath.length; j++)
+				this.wallsInPath[i][j] = m.wallsInPath[i][j];
     }
+
+    this.myBoard = deepCopy(m.myBoard);
+    this.myTurn = m.myTurn;
   }
 
 	/**
@@ -107,6 +92,9 @@ public class QuoridorModel
 		int half = this.myBoardSize - 1;
     this.myBoard = new int[2 * half + 1][2 * half + 1];
 
+		// Start keeping track of walls in my path.
+		this.wallsInPath = new boolean[this.myPlayers][half * half * 2];
+
 		// Put pieces in appropriate starting locations
 		this.myLocations = new Point[this.myPlayers];
 		this.placePieces();
@@ -118,8 +106,16 @@ public class QuoridorModel
 		// Start list of moves
 		this.moves = new ArrayList<int[]>();
 
-		// Start keeping track of walls in my path.
-		this.wallsInPath = new boolean[this.myPlayers][half * half * 2];
+		// Set correct number of walls per player
+		this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
+
+		// Set the wall counts and path lengths to initial values
+    this.myWallCounts = new int[this.myPlayers];
+		this.myPathLengths = new int[this.myPlayers];
+    for (int i = 0; i < this.myPlayers; i++) {
+      this.myWallCounts[i] = this.myWallNumber;
+			this.myPathLengths[i] = pathLength(i);
+    }
   }
 
 	/**
