@@ -12,25 +12,25 @@ public class QuoridorModel
 {
 	private static final int WALL_VALUE = 7;
 	private Point[] myLocations;
-  private int[][] myBoard;
-  private int[] myWallCounts;
+	private int[][] myBoard;
+	private int[] myWallCounts;
 	private int[] myPathLengths;
-  private int myTurn;
-  private int myBoardSize;
-  private int myPlayers;
-  private int myWallNumber;
+	private int myTurn;
+	private int myBoardSize;
+	private int myPlayers;
+	private int myWallNumber;
 	private String myBoardType;
 	private List<int[]> moves;
 	private boolean[][] wallsInPath;
 
-  public QuoridorModel()
-  {
-    this.myBoardSize = 9;
-    this.myPlayers = 2;
+	public QuoridorModel()
+	{
+		this.myBoardSize = 9;
+		this.myPlayers = 2;
 		this.myBoardType = "default";
 
-    initialize();
-  }
+		initialize();
+	}
 
 	/**
 	 * Initialize a model with parameters.
@@ -39,38 +39,38 @@ public class QuoridorModel
 	 * 	 playerCount = number of players in the game: 2 or 4
 	 * 	 size = size of the board (default 9)
 	 */
-  public QuoridorModel(int playerCount, int size, String type)
-  {
-    this.myBoardSize = size;
+	public QuoridorModel(int playerCount, int size, String type)
+	{
+		this.myBoardSize = size;
 		this.myPlayers = playerCount;
 		this.myBoardType = type;
 
-    initialize();
-  }
+		initialize();
+	}
 
 	/**
 	 * Dupicates an instance of a quoridor model.
 	 */
-  public QuoridorModel(QuoridorModel m) {
-    this.myBoardSize = m.myBoardSize;
-    this.myPlayers = m.myPlayers;
+	public QuoridorModel(QuoridorModel m) {
+		this.myBoardSize = m.myBoardSize;
+		this.myPlayers = m.myPlayers;
 		this.myBoardType = m.myBoardType;
 
-    initialize();
+		initialize();
 
 		// Override default values with values from the old model 
 		for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCounts[i] = m.myWallCounts[i];
+			this.myWallCounts[i] = m.myWallCounts[i];
 			this.myPathLengths[i] = m.myPathLengths[i];
 			this.myLocations[i] = new Point(m.myLocations[i]);
 
 			for (int j = 0; j < this.wallsInPath.length; j++)
 				this.wallsInPath[i][j] = m.wallsInPath[i][j];
-    }
+		}
 
-    this.myBoard = deepCopy(m.myBoard);
-    this.myTurn = m.myTurn;
-  }
+		this.myBoard = deepCopy(m.myBoard);
+		this.myTurn = m.myTurn;
+	}
 
 	/**
 	 * This yields 10 for board size 9, as it should, as well as
@@ -84,13 +84,13 @@ public class QuoridorModel
 	/**
 	 * Set all internal variables to their initial values.
 	 */
-  public void initialize()
-  {
-    this.myTurn = 0;
+	public void initialize()
+	{
+		this.myTurn = 0;
 
 		// Initialize the board
 		int half = this.myBoardSize - 1;
-    this.myBoard = new int[2 * half + 1][2 * half + 1];
+		this.myBoard = new int[2 * half + 1][2 * half + 1];
 
 		// Start keeping track of walls in my path.
 		this.wallsInPath = new boolean[this.myPlayers][half * half * 2];
@@ -110,13 +110,13 @@ public class QuoridorModel
 		this.myWallNumber = numberOfWalls(this.myBoardSize, this.myPlayers);
 
 		// Set the wall counts and path lengths to initial values
-    this.myWallCounts = new int[this.myPlayers];
+		this.myWallCounts = new int[this.myPlayers];
 		this.myPathLengths = new int[this.myPlayers];
-    for (int i = 0; i < this.myPlayers; i++) {
-      this.myWallCounts[i] = this.myWallNumber;
+		for (int i = 0; i < this.myPlayers; i++) {
+			this.myWallCounts[i] = this.myWallNumber;
 			this.myPathLengths[i] = pathLength(i);
-    }
-  }
+		}
+	}
 
 	/**
 	 * Make sure all pieces end up on appropriate starting squares.
@@ -163,7 +163,7 @@ public class QuoridorModel
 		// each pair of pieces to make the board rotation-symmetric.
 		//
 		// TODO adjust pieces on even hex boards.
-    if (isEven(this.myBoardSize))
+		if (isEven(this.myBoardSize))
 		{
 			if (this.myBoardType != "hexagonal")
 			{
@@ -172,7 +172,7 @@ public class QuoridorModel
 				if (this.myPlayers == 4)
 					this.myLocations[2].y += 2;
 			}
-    }
+		}
 	}
 
 
@@ -193,7 +193,7 @@ public class QuoridorModel
 	 * ai_move uses minimax to decide on a move and take it.
 	 *
 	 * Params:
-	 *   millis = the length of time to search moves in milliseconds
+	 *	 millis = the length of time to search moves in milliseconds
 	 */
 	int[] ai_move(long millis)
 	{
@@ -237,7 +237,7 @@ public class QuoridorModel
 	 * Undo last moves.
 	 *
 	 * Params:
-	 *   n = the number of moves to undo
+	 *	 n = the number of moves to undo
 	 */
 	void undo(int n)
 	{
@@ -279,7 +279,7 @@ public class QuoridorModel
 	 * Checks for move legality, and if legal, moves the player.
 	 *
 	 * Params:
-	 *   destiantion = the desired location to move the piece to
+	 *	 destiantion = the desired location to move the piece to
 	 *
 	 * Returns: whether or not the move occurred 
 	 */
@@ -318,11 +318,11 @@ public class QuoridorModel
 	 * Check if this piece movement is legal.
 	 *
 	 * Params:
-	 *   origin = current location of piece
-	 *   destination = desired new location of piece
+	 *	 origin = current location of piece
+	 *	 destination = desired new location of piece
 	 *
 	 * Returns:
-	 *   Whether or not the move is legal
+	 *	 Whether or not the move is legal
 	 */
 	boolean isLegalMove(final Point origin, final Point destination)
 	{
@@ -375,8 +375,8 @@ public class QuoridorModel
 	 * Check if this piece movement is legal on a hex board.
 	 *
 	 * Params:
-	 *   origin = previous location
-	 *   destination = attempted location
+	 *	 origin = previous location
+	 *	 destination = attempted location
 	 *
 	 * Returns whether or not this move is legal, true or false
 	 */
@@ -462,10 +462,10 @@ public class QuoridorModel
 	 * Tests a jump to see if it is legal.
 	 *
 	 * Params:
-	 *   origin = Where we're jumping from
-	 *   jump = Where we're jumping over
-	 *   destination = Where we're jumping to
-	 *   walls = Array of walls that have to exist for the jump to be legal
+	 *	 origin = Where we're jumping from
+	 *	 jump = Where we're jumping over
+	 *	 destination = Where we're jumping to
+	 *	 walls = Array of walls that have to exist for the jump to be legal
 	 */
 	boolean legalJump(
 			final Point origin,
@@ -525,8 +525,8 @@ public class QuoridorModel
 	 * Checks for wall legality, and if legal, places the wall.
 	 *
 	 * Params:
-	 *   placement = the desired wall placement location
-	 *   o = the orientation (1 for vertical, 2 for horizontal)
+	 *	 placement = the desired wall placement location
+	 *	 o = the orientation (1 for vertical, 2 for horizontal)
 	 */
 	boolean placeWall(Point placement, int o)
 	{
@@ -622,8 +622,8 @@ public class QuoridorModel
 	 * Asserts a wall is legal.
 	 *
 	 * Params:
-	 *   placement = desired location of new wall
-	 *   orientation = orientation of new wall (vertical, 1, or horizontal, 2)
+	 *	 placement = desired location of new wall
+	 *	 orientation = orientation of new wall (vertical, 1, or horizontal, 2)
 	 */
 	boolean isLegalWall(final Point placement, final int orientation)
 	{
@@ -756,14 +756,14 @@ public class QuoridorModel
 	 * them, looking for the best one.
 	 *
 	 * Params:
-	 *   qb = The board to search for a move on
-	 *   depth = how many moves deep to search
-	 *   a, b = alpha and beta for pruning unecessary sub-trees
-	 *   seconds, t0 = time limit and time of beginning the search
-	 *   best = best move so far for scouting
+	 *	 qb = The board to search for a move on
+	 *	 depth = how many moves deep to search
+	 *	 a, b = alpha and beta for pruning unecessary sub-trees
+	 *	 seconds, t0 = time limit and time of beginning the search
+	 *	 best = best move so far for scouting
 	 *
 	 * Returns:
-	 *   best move that could be found in form [x, y, o, score]
+	 *	 best move that could be found in form [x, y, o, score]
 	 */
 	int[] negascout(int depth, int alpha, int beta, long millis, long t0, int[] best)
 	{
@@ -1087,7 +1087,7 @@ public class QuoridorModel
 	 *
 	 * Helper function for listing legal moves.
 	 * Params
-	 *   origin = the place we're coming from.
+	 *	 origin = the place we're coming from.
 	 */
 	private Point[] possibleMoves(final Point origin)
 	{
@@ -1120,7 +1120,7 @@ public class QuoridorModel
 	 * List all legal moves that a piece can make.
 	 *
 	 * Params
-	 *   origin = the place we're coming from
+	 *	 origin = the place we're coming from
 	 */
 	public Point[] legalMoves(final Point origin)
 	{
@@ -1230,31 +1230,31 @@ public class QuoridorModel
 	/**
 	 * Copy the board into a new array.
 	 */
-  public int[][] deepCopy(int[][] board)
-  {
-    int[][] newBoard = new int[board.length][board.length];
-    for (int i = 0; i < board.length; i++) {
-      for (int j = 0; j < board.length; j++) {
-        newBoard[i][j] = board[i][j];
-      }
-    }
-    return newBoard;
-  }
+	public int[][] deepCopy(int[][] board)
+	{
+		int[][] newBoard = new int[board.length][board.length];
+		for (int i = 0; i < board.length; i++) {
+			for (int j = 0; j < board.length; j++) {
+				newBoard[i][j] = board[i][j];
+			}
+		}
+		return newBoard;
+	}
 
-  public boolean isEven(int number)
-  {
-    return number % 2 == 0;
-  }
+	public boolean isEven(int number)
+	{
+		return number % 2 == 0;
+	}
 
-  public int getPlayer()
-  {
-    return this.myTurn % this.myPlayers;
-  }
+	public int getPlayer()
+	{
+		return this.myTurn % this.myPlayers;
+	}
 
-  public int getWallCount(int player)
-  {
-    return this.myWallCounts[player];
-  }
+	public int getWallCount(int player)
+	{
+		return this.myWallCounts[player];
+	}
 
 	public Point[] getLocations()
 	{

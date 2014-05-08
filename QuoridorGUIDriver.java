@@ -16,16 +16,16 @@ import javax.swing.JTextField;
  * This class displays the quoridor board and handles interactions.
  */
 public class QuoridorGUIDriver extends JFrame
-  implements ActionListener, MouseListener, MouseMotionListener
+	implements ActionListener, MouseListener, MouseMotionListener
 {
-  private JTextField myField;
-  private JButton myButton;
-  private JButton ruleButton;
-  private JButton quitButton;
-  private JPanel myPanel;
-  private QuoridorModel myModel;
+	private JTextField myField;
+	private JButton myButton;
+	private JButton ruleButton;
+	private JButton quitButton;
+	private JPanel myPanel;
+	private QuoridorModel myModel;
 	private BoardPanel myBoardPanel;
-  private String myType;
+	private String myType;
 	private String myMode;
 	private String[] myNames;
 	private String[] myColors;
@@ -34,14 +34,14 @@ public class QuoridorGUIDriver extends JFrame
 	private int compLevel;
  
 
-  public QuoridorGUIDriver()
+	public QuoridorGUIDriver()
 	{
-    this.myModel = new QuoridorModel();
-    this.myType = "default";
-    initialize();
-  }
+		this.myModel = new QuoridorModel();
+		this.myType = "default";
+		initialize();
+	}
 
-  public QuoridorGUIDriver(String[] names, String[] colors, String type, int size, int compLevel)
+	public QuoridorGUIDriver(String[] names, String[] colors, String type, int size, int compLevel)
 	{
 		this.myNames = names;
 		this.myColors = colors;
@@ -54,96 +54,96 @@ public class QuoridorGUIDriver extends JFrame
 		Point[] locations = this.myModel.getLocations();
 		this.myBoardPanel = new BoardPanel(colors, type, size, locations);
 
-    initialize();
-  }
+		initialize();
+	}
 
 	/**
 	 * Rev up your engines, ladies and gentlemen.
 	 */
-  public void initialize()
+	public void initialize()
 	{
-    setTitle("Welcome to Passaj!");
+		setTitle("Welcome to Passaj!");
 
 		// Add action listeners
 		this.myBoardPanel.addMouseListener(this);
 		this.myBoardPanel.addMouseMotionListener(this);
 
 		// Initialize UI elements
-    this.myField = new JTextField();
-    this.myField.setEditable(false);
-    this.myButton = new JButton("New Game of PASSAJ");
-    this.myButton.addActionListener(this);
-    this.myButton.setVisible(true);
-    this.myButton.setActionCommand("new game");
-    this.ruleButton = new JButton("Rules of PASSAJ");
-    this.ruleButton.addActionListener(this);
-    this.ruleButton.setVisible(true);
-    this.ruleButton.setActionCommand("rules");
-    this.quitButton = new JButton("Quit PASSAJ");
-    this.quitButton.addActionListener(this);
-    this.quitButton.setVisible(true);
-    this.quitButton.setActionCommand("quit");
+		this.myField = new JTextField();
+		this.myField.setEditable(false);
+		this.myButton = new JButton("New Game of PASSAJ");
+		this.myButton.addActionListener(this);
+		this.myButton.setVisible(true);
+		this.myButton.setActionCommand("new game");
+		this.ruleButton = new JButton("Rules of PASSAJ");
+		this.ruleButton.addActionListener(this);
+		this.ruleButton.setVisible(true);
+		this.ruleButton.setActionCommand("rules");
+		this.quitButton = new JButton("Quit PASSAJ");
+		this.quitButton.addActionListener(this);
+		this.quitButton.setVisible(true);
+		this.quitButton.setActionCommand("quit");
 
 		// Add things to the layout
-    this.myPanel = new JPanel();
-    this.myPanel.add(this.ruleButton, "East");
-    this.myPanel.add(this.quitButton, "Center");
-    this.myPanel.add(this.myButton, "West");
-    setLayout(new BorderLayout());
+		this.myPanel = new JPanel();
+		this.myPanel.add(this.ruleButton, "East");
+		this.myPanel.add(this.quitButton, "Center");
+		this.myPanel.add(this.myButton, "West");
+		setLayout(new BorderLayout());
 		add(this.myBoardPanel, "North");
-    add(this.myPanel, "South");
-    add(this.myField, "Center");
-    setDefaultCloseOperation(3);
+		add(this.myPanel, "South");
+		add(this.myField, "Center");
+		setDefaultCloseOperation(3);
 
 		// Begin with friendly welcoming text.
-    String openText = "Welcome to the match-up between ";
+		String openText = "Welcome to the match-up between ";
 		for (int i = 0; i < this.playerCount - 1; i++)
 			openText += this.myNames[i] + " and ";
 		openText += this.myNames[this.playerCount - 1] + ".";
-    this.myField.setText(openText);
-  }
+		this.myField.setText(openText);
+	}
 
 	// Begin.
-  public static void main(String[] args)
+	public static void main(String[] args)
 	{
-    QuoridorGUIDriver pass = new QuoridorGUIDriver();
-    pass.pack();
-    pass.setVisible(true);
-  }
+		QuoridorGUIDriver pass = new QuoridorGUIDriver();
+		pass.pack();
+		pass.setVisible(true);
+	}
 
 	/**
 	 * Handle button clicks.
 	 */
-  public void actionPerformed(ActionEvent e)
-  {
-    // Player clicked on "new game" button
+	public void actionPerformed(ActionEvent e)
+	{
+		// Player clicked on "new game" button
 		if (e.getActionCommand().equals("new game"))
-    {
-      InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.myType, this.boardSize, this.compLevel);
+		{
+			InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.myType, this.boardSize, this.compLevel);
 			input.pack();
 			input.setVisible(true);
 			setVisible(false);
-    }
+		}
 
 		// Player clicked on "rules" button
-    if (e.getActionCommand().equals("rules"))
-    {
+		if (e.getActionCommand().equals("rules"))
+		{
 			RuleGUIDriver rule = new RuleGUIDriver(this);
 
 			rule.pack();
 			rule.setVisible(true);
 			this.setVisible(false);
-    }
+		}
 
 		// User clicked on "quit" button, so QUIT
-    if (e.getActionCommand().equals("quit"))
-      System.exit(128);
-  }
+		if (e.getActionCommand().equals("quit"))
+			System.exit(128);
+	}
 
 	/**
 	 * The player just made a move!
 	 */
-  public void mouseClicked(MouseEvent e)
+	public void mouseClicked(MouseEvent e)
 	{
 		Point move = this.myBoardPanel.pixToMovePoint(e.getX(), e.getY());
 
@@ -199,16 +199,16 @@ public class QuoridorGUIDriver extends JFrame
 			fieldText += this.myNames[i] + " "
 				+ this.myModel.getWallCount(i) + " ";
 
-		fieldText += "  walls left.  Player's Turn: "
+		fieldText += "	walls left.	Player's Turn: "
 			+ this.myNames[this.myModel.getPlayer()];
 		this.myField.setText(fieldText);
-  }
+	}
 
 	/**
 	 * When the player moves the mouse, display a helpful temporary
 	 * piece or wall where they would move if they clicked.
 	 */
-  public void mouseMoved(MouseEvent e)
+	public void mouseMoved(MouseEvent e)
 	{
 		Point move = this.myBoardPanel.pixToMovePoint(e.getX(), e.getY());
 
@@ -231,25 +231,25 @@ public class QuoridorGUIDriver extends JFrame
 			if (this.myModel.isLegalWall(tempWall, o))
 				this.myBoardPanel.setTempWall(tempWall, o);
 		}
-  }
+	}
 
-  public void mouseEntered(MouseEvent e)
+	public void mouseEntered(MouseEvent e)
 	{
-  }
+	}
 
-  public void mouseExited(MouseEvent arg0)
+	public void mouseExited(MouseEvent arg0)
 	{
-  }
+	}
 
-  public void mousePressed(MouseEvent arg0)
+	public void mousePressed(MouseEvent arg0)
 	{
-  }
+	}
 
-  public void mouseReleased(MouseEvent arg0)
+	public void mouseReleased(MouseEvent arg0)
 	{
-  }
+	}
 
-  public void mouseDragged(MouseEvent e)
+	public void mouseDragged(MouseEvent e)
 	{
-  }
+	}
 }
