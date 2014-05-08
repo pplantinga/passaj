@@ -119,7 +119,7 @@ public class QuoridorModel
 		this.moves = new ArrayList<int[]>();
 
 		// Start keeping track of walls in my path.
-		this.wallsInPath = new boolean[2][half * half * 2];
+		this.wallsInPath = new boolean[this.myPlayers][half * half * 2];
   }
 
 	/**
@@ -545,7 +545,7 @@ public class QuoridorModel
 		// check if this wall blocks any path
 		for (int i = 0; i < this.myPlayers; i++)
 		{
-			if (wallsInPath[0][linearize(placement.x, placement.y, o)])
+			if (wallsInPath[i][linearize(placement.x, placement.y, o)])
 			{
 				testLengths[i] = pathLength(0);
 
