@@ -822,23 +822,17 @@ public class QuoridorModel
 		// move piece
 		for (Point move : legalMoves(origin))
 		{
-			// legal and we haven't checked it already
-			if (isLegalMove(origin, move)
-				 && (best == null
-					 || best[2] != 0
-					 || best[0] != move.x
-					 || best[1] != move.y
-					)
-				)
+			// If we haven't checked it already
+			if (best == null || best[2] != 0 || best[0] != move.x || best[1] != move.y)
 			{
 				testBoard = new QuoridorModel(this);
 				testBoard.movePiece(move);
 				
-				/* Don't consider moves that don't shorten our path.
-				 * This is usually bad, and sometimes the computer will make a
+				/* Don't consider moves that lengthen our path.
+				 * This is always bad, and sometimes the computer will make a
 				 * dumb move to avoid getting blocked by a wall.
 				 */
-				if (testBoard.myPathLengths[this.myTurn % 2] >= oldPathLength)
+				if (testBoard.myPathLengths[this.myTurn % 2] > oldPathLength)
 					continue;
 
 				opponentMove = testBoard.negascout(
@@ -878,67 +872,6 @@ public class QuoridorModel
 
 				if (first)
 					first = false;
-			}
-
-			// Check jumps
-			else if (isOnBoard(move)
-				 && this.myBoard[move.x][move.y] != 0)
-			{
-				for (Point jump : legalMoves(move))
-				{
-					if (isLegalMove(origin, jump))
-					{
-						testBoard = new QuoridorModel(this);
-						testBoard.movePiece(jump);
-	
-						/* Don't consider jumps that make our length longer.
-						 * There can be situations where the only available move is
-						 * a jump that doesn't make our path shorter, so examine those.
-						 */
-						if (testBoard.myPathLengths[this.myTurn % 2] > oldPathLength)
-							continue;
-
-						opponentMove = testBoard.negascout(
-							depth - 1,
-							-scoutVal,
-							-alpha,
-							millis,
-							t0,
-							null
-						);
-
-						if (alpha < -opponentMove[3]
-							 && -opponentMove[3] < beta
-							 && !first)
-						{
-							opponentMove = testBoard.negascout(
-								depth - 1,
-								-beta,
-								-alpha,
-								millis,
-								t0,
-								null
-							);
-						}
-
-						if (-opponentMove[3] > alpha)
-						{
-							alpha = -opponentMove[3];
-							bestX = jump.x;
-							bestY = jump.y;
-							bestO = 0;
-						}
-
-						if (alpha >= beta
-								|| System.currentTimeMillis() - t0 > millis)
-							return new int[] {bestX, bestY, bestO, alpha};
-
-						scoutVal = alpha + 1;
-
-						if (first)
-							first = false;
-					}
-				}
 			}
 		}
 
@@ -1098,7 +1031,7 @@ public class QuoridorModel
 			// Try all moves
 			for (Point move : legalMoves(location))
 			{
-				if (isLegalMove(location, move) && paths[move.x][move.y] == 0)
+				if (paths[move.x][move.y] == 0)
 				{
 					h = heuristic(player, move);
 					paths[move.x][move.y] = 1000 * location.x + location.y + 2;
@@ -1154,11 +1087,18 @@ public class QuoridorModel
 	}
 
 	/**
-	 * List all legal moves.
+	 * List all possible 1-space moves.
+	 *
+	 * Helper function for listing legal moves.
+	 * Params
+	 *   origin = the place we're coming from.
 	 */
-	public Point[] legalMoves(Point origin)
+	private Point[] possibleMoves(final Point origin)
 	{
 		if (this.myBoardType == "hexagonal")
+		{
+			// On a hexagonal board, we can jump left, right,
+			// up-left, up-right, down-left, and down-right.
 			return new Point[] {
 				new Point(origin.x - 2, origin.y),
 				new Point(origin.x + 2, origin.y),
@@ -1167,13 +1107,45 @@ public class QuoridorModel
 				new Point(origin.x + 1, origin.y - 2),
 				new Point(origin.x + 1, origin.y + 2)
 			};
+		}
 		else
+		{
+			// On a normal board, we can jump in 4 cardinal directions.
 			return new Point[] {
 				new Point(origin.x - 2, origin.y),
 				new Point(origin.x, origin.y - 2),
 				new Point(origin.x + 2, origin.y),
 				new Point(origin.x, origin.y + 2)
 			};
+		}
+	}
+
+	/**
+	 * List all legal moves that a piece can make.
+	 *
+	 * Params
+	 *   origin = the place we're coming from
+	 */
+	public Point[] legalMoves(final Point origin)
+	{
+		ArrayList<Point> moves = new ArrayList<Point>();
+		
+		// Check all moves of distance one.
+		for (Point move : possibleMoves(origin))
+		{
+			// Check if the move is legal.
+			if (isLegalMove(origin, move))
+				moves.add(move);
+
+			// If there's a piece where we're going, check jumps.
+			else if (isOnBoard(move) && this.myBoard[move.x][move.y] != 0)
+				for (Point jump : possibleMoves(move))
+					if (isLegalMove(origin, jump))
+						moves.add(jump);
+		}
+
+		// Convert list to array.
+		return moves.toArray(new Point[moves.size()]);
 	}
 
 	/**
