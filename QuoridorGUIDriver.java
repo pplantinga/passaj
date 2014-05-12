@@ -19,25 +19,30 @@ public class QuoridorGUIDriver extends JFrame
 	implements ActionListener, MouseListener, MouseMotionListener
 {
 	private JTextField myField;
-	private JButton myButton;
+	private JButton newGameButton;
 	private JButton ruleButton;
 	private JButton quitButton;
-	private JPanel myPanel;
+	private JPanel myButtonPanel;
 	private QuoridorModel myModel;
 	private BoardPanel myBoardPanel;
 	private String myType;
 	private String myMode;
 	private String[] myNames;
 	private String[] myColors;
-	private int playerCount;
-	private int boardSize;
-	private int compLevel;
+	private int myPlayerCount;
+	private int myBoardSize;
+	private int myCompLevel;
  
 
 	public QuoridorGUIDriver()
 	{
 		this.myModel = new QuoridorModel();
 		this.myType = "default";
+		this.myNames = new String[] {"Player 1", "Player 2"};
+		this.myColors = new String[] {"#123456", "#987654"};
+		this.myPlayerCount = 2;
+		this.myBoardSize = 9;
+
 		initialize();
 	}
 
@@ -45,14 +50,10 @@ public class QuoridorGUIDriver extends JFrame
 	{
 		this.myNames = names;
 		this.myColors = colors;
-		this.playerCount = names.length;
-		this.boardSize = size;
-		this.compLevel = compLevel;
+		this.myPlayerCount = names.length;
+		this.myBoardSize = size;
+		this.myCompLevel = compLevel;
 		this.myType = type;
-
-		this.myModel = new QuoridorModel(this.playerCount, size, type);
-		Point[] locations = this.myModel.getLocations();
-		this.myBoardPanel = new BoardPanel(colors, type, size, locations);
 
 		initialize();
 	}
@@ -62,6 +63,12 @@ public class QuoridorGUIDriver extends JFrame
 	 */
 	public void initialize()
 	{
+		// Initialize classes
+		this.myModel = new QuoridorModel(myPlayerCount, myBoardSize, myType);
+		Point[] locations = this.myModel.getLocations();
+		this.myBoardPanel = new BoardPanel(myColors, myType, myBoardSize, locations);
+
+		// Window title
 		setTitle("Welcome to Passaj!");
 
 		// Add action listeners
@@ -71,10 +78,10 @@ public class QuoridorGUIDriver extends JFrame
 		// Initialize UI elements
 		this.myField = new JTextField();
 		this.myField.setEditable(false);
-		this.myButton = new JButton("New Game of PASSAJ");
-		this.myButton.addActionListener(this);
-		this.myButton.setVisible(true);
-		this.myButton.setActionCommand("new game");
+		this.newGameButton = new JButton("New Game of PASSAJ");
+		this.newGameButton.addActionListener(this);
+		this.newGameButton.setVisible(true);
+		this.newGameButton.setActionCommand("new game");
 		this.ruleButton = new JButton("Rules of PASSAJ");
 		this.ruleButton.addActionListener(this);
 		this.ruleButton.setVisible(true);
@@ -85,21 +92,21 @@ public class QuoridorGUIDriver extends JFrame
 		this.quitButton.setActionCommand("quit");
 
 		// Add things to the layout
-		this.myPanel = new JPanel();
-		this.myPanel.add(this.ruleButton, "East");
-		this.myPanel.add(this.quitButton, "Center");
-		this.myPanel.add(this.myButton, "West");
+		this.myButtonPanel = new JPanel();
+		this.myButtonPanel.add(this.ruleButton, "East");
+		this.myButtonPanel.add(this.quitButton, "Center");
+		this.myButtonPanel.add(this.newGameButton, "West");
 		setLayout(new BorderLayout());
 		add(this.myBoardPanel, "North");
-		add(this.myPanel, "South");
+		add(this.myButtonPanel, "South");
 		add(this.myField, "Center");
 		setDefaultCloseOperation(3);
 
 		// Begin with friendly welcoming text.
 		String openText = "Welcome to the match-up between ";
-		for (int i = 0; i < this.playerCount - 1; i++)
+		for (int i = 0; i < this.myPlayerCount - 1; i++)
 			openText += this.myNames[i] + " and ";
-		openText += this.myNames[this.playerCount - 1] + ".";
+		openText += this.myNames[this.myPlayerCount - 1] + ".";
 		this.myField.setText(openText);
 	}
 
@@ -119,7 +126,7 @@ public class QuoridorGUIDriver extends JFrame
 		// Player clicked on "new game" button
 		if (e.getActionCommand().equals("new game"))
 		{
-			InputGUIDriver input = new InputGUIDriver(this.myNames, this.myColors, this.myType, this.boardSize, this.compLevel);
+			InputGUIDriver input = new InputGUIDriver(myNames, myColors, myType, myBoardSize, myCompLevel);
 			input.pack();
 			input.setVisible(true);
 			setVisible(false);
@@ -179,9 +186,9 @@ public class QuoridorGUIDriver extends JFrame
 				this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
 		}
 
-		if (this.compLevel != 0 && aimove)
+		if (this.myCompLevel != 0 && aimove)
 		{
-			int[] themove = this.myModel.ai_move(this.compLevel * 1000);
+			int[] themove = this.myModel.ai_move(this.myCompLevel * 1000);
 
 			if (themove[2] == 0)
 			{
@@ -195,7 +202,7 @@ public class QuoridorGUIDriver extends JFrame
 		}
 
 		String fieldText = "";
-		for (int i = 0; i < this.playerCount; i++)
+		for (int i = 0; i < this.myPlayerCount; i++)
 			fieldText += this.myNames[i] + " "
 				+ this.myModel.getWallCount(i) + " ";
 
