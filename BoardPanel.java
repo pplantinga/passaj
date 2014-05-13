@@ -110,10 +110,7 @@ public class BoardPanel extends JPanel
 				paintBlock(pen, x, y, this.myBlockWidth);
 
 				// If it's a goal row, make it slighty lighter than the rest
-				if (j == 0
-						|| j == this.myBoardSize - 1
-						|| this.myPlayerCount == 4
-							&& (i == 0 || i == this.myBoardSize - 1))
+				if (isGoalRow(new Point(i, j)))
 					pen.setColor(Color.darkGray);
 				else
 					pen.setColor(Color.black);
@@ -198,38 +195,98 @@ public class BoardPanel extends JPanel
 
 	public void paintHexBlocks(Graphics pen)
 	{
-		for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-			for (int j = 1; j <= this.myBoardSize; j++) {
+		// We need to do twice the board size in the x direction
+		// so that we can stagger the hexes
+		for (int i = 0; i < this.myBoardSize * 2 - 1; i++)
+		{
+			for (int j = 0; j < this.myBoardSize; j++)
+			{
+				if (!isValidHex(new Point(i, j)))
+					continue;
+
+				// Convert the board location into pixels
+				int x = this.convertToPix(i + 1, 0);
+				int y = this.convertToPix((j + 1) * 2, -j * this.myWallWidth);
+
+				// Paint a slightly bigger hex underneath to give it a border
 				pen.setColor(Color.lightGray);
-				if (((!isEven(i)) || (isEven(j))) && ((isEven(i)) || (!isEven(j))) && 
-					(i + j >= (this.myBoardSize + 1) / 2 + 1) && (j >= 1) && (j <= this.myBoardSize) && 
-					(i - j <= 1.5D * (this.myBoardSize + 1) - 3.0D) && (i + j <= 2.5D * (this.myBoardSize + 1) - 3.0D) && (j - i <= (this.myBoardSize + 1) / 2 - 1))
-					paintHexBlock(pen, this.myWidth * i / (2 * this.myBoardSize), 
-						(int)(this.myWidth * j / this.myBoardSize * 
-						Math.sin(1.047197551196598D)), this.myRadius + 2);
-				if ((i + j == (this.myBoardSize + 1) / 2 + 1) || (j == 1) || (j == this.myBoardSize) || (i - j == 1.5D * (this.myBoardSize + 1) - 3.0D) || 
-					(i + j == 2.5D * (this.myBoardSize + 1) - 3.0D) || (j - i == (this.myBoardSize + 1) / 2 - 1))
+				paintHexBlock(pen, new Point(x, y), this.myRadius + 2);
+
+				// Paint the goal row slightly lighter
+				if (isGoalRow(new Point(i, j)))
 					pen.setColor(Color.darkGray);
 				else
 					pen.setColor(Color.black);
-				if (((!isEven(i)) || (isEven(j))) && ((isEven(i)) || (!isEven(j))) && 
-					(i + j >= (this.myBoardSize + 1) / 2 + 1) && (j >= 1) && (j <= this.myBoardSize) && 
-					(i - j <= 1.5D * (this.myBoardSize + 1) - 3.0D) && (i + j <= 2.5D * (this.myBoardSize + 1) - 3.0D) && (j - i <= (this.myBoardSize + 1) / 2 - 1)) {
-					paintHexBlock(pen, this.myWidth * i / (2 * this.myBoardSize), 
-						(int)(this.myWidth * j / this.myBoardSize * 
-						Math.sin(1.047197551196598D)), this.myRadius);
-				}
+
+				// Paint the block
+				paintHexBlock(pen, new Point(x, y), this.myRadius);
 			}
 		}
 	}
 
-	public void paintHexBlock(Graphics pen, int x, int y, int radius)
+	public void paintHexBlock(Graphics pen, final Point p, final int radius)
 	{
-		int radiusCos60 = (int)(radius * Math.cos(1.047197551196598D));
-		int radiusSin60 = (int)(radius * Math.sin(1.047197551196598D));
-		int[] xpos = { x, x - radiusSin60, x - radiusSin60, x, x + radiusSin60, x + radiusSin60 };
-		int[] ypos = { y + radius, y + radiusCos60, y - radiusCos60, y - radius, y - radiusCos60, y + radiusCos60 };
+		final int rCos60 = (int)(radius * Math.cos(Math.PI / 3));
+		final int rSin60 = (int)(radius * Math.sin(Math.PI / 3));
+
+		// Set up vertices of the hex
+		int[] xpos = {
+			p.x,
+			p.x - rSin60,
+			p.x - rSin60,
+			p.x,
+			p.x + rSin60,
+			p.x + rSin60
+		};
+
+		int[] ypos = {
+			p.y + radius,
+			p.y + rCos60,
+			p.y - rCos60,
+			p.y - radius,
+			p.y - rCos60,
+			p.y + rCos60
+		};
+
+		// Paint the hex
 		pen.fillPolygon(xpos, ypos, 6);
+	}
+
+	private boolean isGoalRow(final Point p)
+	{
+		final int half = (this.myBoardSize - 1) / 2;
+
+		// Top and bottom row are always goal rows
+		if (p.y == 0 || p.y == half * 2)
+			return true;
+
+		// Always call the border of the hex board a goal row
+		if (this.myBoardType == "hexagonal")
+			return 2 * p.x + p.y == half
+				|| p.y - 2 * p.x == half
+				|| 2 * p.x + p.y == 5 * half
+				|| 2 * p.x - p.y == 3 * half;
+
+		// Only call the sides of the board a goal row when there's 4 people
+		else if (this.myPlayerCount == 4)
+			return p.x == 0 || p.x == half * 2;
+
+		else
+			return false;
+	}
+
+	private boolean isValidHex(final Point p)
+	{
+		if (isEven(p.x) && !isEven(p.y) || !isEven(p.x) && isEven(p.y))
+			return false;
+
+		final int half = (this.myBoardSize - 1) / 2;
+		return p.y >= 0
+			&& p.y <= half * 2
+			&& p.x + p.y >= half
+			&& p.y - p.x <= half 
+			&& p.x - p.y <= 3 * half
+			&& p.x + p.y <= 5 * half;
 	}
 
 	public void paintHexPieces(Graphics pen)
