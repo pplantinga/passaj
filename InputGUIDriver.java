@@ -346,8 +346,6 @@ public class InputGUIDriver extends JFrame
 
 			// Parse size of board
 			int size = Integer.parseInt(this.sizefield.getText());
-			if (this.myType == "hexagonal")
-				size = size % 4 + 1;
 
 			// Use 0 for complevel if we're not using a computer
 			if (!this.compEnabled)

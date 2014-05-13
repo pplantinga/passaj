@@ -123,7 +123,11 @@ public class QuoridorModel
 	 */
 	private void placePieces()
 	{
-		int half = this.myBoardSize - 1;
+		final int half = this.myBoardSize - 1;
+		final int quarter = half / 2;
+		final int eighth = half / 4;
+		final int threeQuarters = half * 3 / 2;
+		final int sevenEighths = half * 7 / 4;
 
 		// Every board has one player in the same location.
 		this.myLocations[0] = new Point(half, 0);
@@ -132,7 +136,7 @@ public class QuoridorModel
 		if (this.myPlayers != 3)
 			this.myLocations[1] = new Point(half, 2 * half);
 		else
-			this.myLocations[1] = new Point(3 * half / 2, 3 * half / 2);
+			this.myLocations[1] = new Point(sevenEighths, threeQuarters);
 
 		// Add third and fourth players for normal boards
 		if (this.myPlayers == 4 && this.myBoardType != "hexagonal")
@@ -145,17 +149,17 @@ public class QuoridorModel
 		if (this.myBoardType == "hexagonal" && this.myPlayers > 2)
 		{
 			// Third player
-			this.myLocations[2] = new Point(half / 2, 3 * half / 2);
+			this.myLocations[2] = new Point(eighth, threeQuarters);
 
 			// Fourth player
 			if (this.myPlayers > 3)
-				this.myLocations[3] = new Point(3 * half / 2, half / 2);
+				this.myLocations[3] = new Point(sevenEighths, quarter);
 
 			// Fifth and Sixth players
 			if (this.myPlayers == 6)
 			{
-				this.myLocations[4] = new Point(3 * half / 2, 3 * half / 2);
-				this.myLocations[5] = new Point(half / 2, half / 2);
+				this.myLocations[4] = new Point(sevenEighths, threeQuarters);
+				this.myLocations[5] = new Point(eighth, quarter);
 			}
 		}
 		
@@ -703,7 +707,7 @@ public class QuoridorModel
 	 * This should only be called for the default board, because figuring
 	 * out if a dimension is on the hexagonal board requires both dimensions.
 	 */
-	boolean isOnBoard(int d)
+	boolean isOnBoard(final int d)
 	{
 		return 0 <= d && d < this.myBoardSize * 2 - 1;
 	}
@@ -713,17 +717,18 @@ public class QuoridorModel
 	 *
 	 * This can be called for either default or hexagonal boards.
 	 */
-	boolean isOnBoard(Point test)
+	boolean isOnBoard(final Point test)
 	{
+		final int half = this.myBoardSize - 1;
 		if (this.myBoardType != "hexagonal")
 			return isOnBoard(test.x) && isOnBoard(test.y);
 		else
 			return test.y >= 0
-				&& test.y < 2 * this.myBoardSize - 1
-				&& -2 * test.x + test.y <= this.myBoardSize - 1
-				&& 2 * test.x - test.y <= this.myBoardSize * 3 - 1
-				&& 2 * test.x + test.y >= this.myBoardSize + 1
-				&& 2 * test.x + test.y <= 5 * this.myBoardSize - 1;
+				&& test.y <= 2 * half
+				&& -2 * test.x + test.y <= half
+				&& 2 * test.x - test.y <= 3 * half
+				&& 2 * test.x + test.y >= half
+				&& 2 * test.x + test.y <= 5 * half;
 	}
 
 	/**
@@ -1177,37 +1182,37 @@ public class QuoridorModel
 	 */
 	int heuristic(final int player, final Point p)
 	{
+		final int half = this.myBoardSize - 1;
+		final int quarter = half / 2;
+		final int halfY = p.y / 2;
 		switch (player)
 		{
 			case 0:
-				return this.myBoardSize * 2 - 2 - p.y;
+				return half * 2 - p.y;
 
 			case 1:
 				if (this.myPlayers != 3)
 					return p.y;
 				else
-					return this.myBoardSize * 3 - 2 * p.x + p.y - 2;
+					return p.x + halfY - quarter;
 
 			case 2:
 				if (this.myBoardType == "hexagonal")
-					return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
+					return 3 * quarter - p.x + halfY;
 				else
-					return this.myBoardSize * 2 - 2 - p.x;
+					return half * 2 - p.x;
 
 			case 3:
-				return 5 * this.myBoardSize - 2 * p.x - p.y - 2;
-
-			case 4:
 				if (this.myBoardType == "hexagonal")
-					return this.myBoardSize - 2 * p.x - p.y;
+					return quarter + p.x - halfY;
 				else
 					return p.x;
 
-			case 5:
-				return this.myBoardSize * 3 - 2 * p.x + p.y - 2;
+			case 4:
+				return p.x + halfY - quarter;
 
-			case 6:
-				return this.myBoardSize + 2 * p.x - p.y - 2;
+			case 5:
+				return 5 * quarter - p.x - halfY;
 
 			default:
 				assert false;
