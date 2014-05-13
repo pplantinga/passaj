@@ -292,10 +292,10 @@ public class BoardPanel extends JPanel
 	public void paintHexPieces(Graphics pen)
 	{
 		int width = (this.myRadius - this.myWallWidth) * 2;
-		int adjust = -this.myRadius + this.myWallWidth;
 		for (int piece = 0; piece < this.myPlayerCount; piece++) {
-			int x = convertToPix(this.myLocations[piece].x, adjust);
-			int y = convertToPix(this.myLocations[piece].y + 1, adjust);
+			int x = convertToPix(this.myLocations[piece].x + 1, -width / 2);
+			int y = convertToPix(this.myLocations[piece].y + 1,
+					-this.myLocations[piece].y / 2 * this.myWallWidth + width / 2);
 
 			// For a white border, just draw the same thing
 			// slightly bigger and underneath the other.
