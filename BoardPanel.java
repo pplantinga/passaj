@@ -262,10 +262,10 @@ public class BoardPanel extends JPanel
 
 		// Always call the border of the hex board a goal row
 		if (this.myBoardType == "hexagonal")
-			return 2 * p.x + p.y == half
-				|| p.y - 2 * p.x == half
-				|| 2 * p.x + p.y == 5 * half
-				|| 2 * p.x - p.y == 3 * half;
+			return p.x + p.y == half
+				|| p.y - p.x == half
+				|| p.x + p.y == 5 * half
+				|| p.x - p.y == 3 * half;
 
 		// Only call the sides of the board a goal row when there's 4 people
 		else if (this.myPlayerCount == 4)
