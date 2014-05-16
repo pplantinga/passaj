@@ -206,7 +206,7 @@ public class BoardPanel extends JPanel
 
 				// Convert the board location into pixels
 				int x = this.convertToPix(i + 1, 0);
-				int y = this.convertToPix((j + 1) * 2, -j * this.myWallWidth);
+				int y = this.convertToPix((j + 1) * 2, -j * 2 * this.myWallWidth / 3);
 
 				// Paint a slightly bigger hex underneath to give it a border
 				pen.setColor(Color.lightGray);
@@ -295,7 +295,7 @@ public class BoardPanel extends JPanel
 		for (int piece = 0; piece < this.myPlayerCount; piece++) {
 			int x = convertToPix(this.myLocations[piece].x + 1, -width / 2);
 			int y = convertToPix(this.myLocations[piece].y + 1,
-					-this.myLocations[piece].y / 2 * this.myWallWidth + width / 2);
+					-this.myLocations[piece].y * this.myWallWidth / 3 + width / 2);
 
 			// For a white border, just draw the same thing
 			// slightly bigger and underneath the other.
@@ -311,74 +311,64 @@ public class BoardPanel extends JPanel
 		pen.setColor(BoardPanel.WallColor);
 		for (int[] wall : this.walls)
 			paintHexWall(pen, wall[0], wall[1]);
-		repaint();
+
+		pen.setColor(BoardPanel.TempWallColor);
+		if (tempWall[0] != 0)
+			paintHexWall(pen, tempWall[0], tempWall[1]);
 	}
 
 	public void paintHexWall(Graphics pen, int x, int y)
 	{
-		int[] xpos = new int[6];
-		int[] ypos = new int[6];
-		xpos[0] = convertToPix(x, 0);
-		xpos[1] = convertToPix(x, this.myWallWidth / 3);
-		xpos[2] = convertToPix(x + 1, 0);
-		xpos[3] = convertToPix(x, 0);
-		xpos[4] = convertToPix(x - 1, 0);
-		xpos[5] = convertToPix(x, -this.myWallWidth / 3);
-		if (((isEven(x)) && (!isEven(y / 2))) || ((!isEven(x)) && (isEven(y / 2)))) {
-			ypos[0] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 1.5D) * 
-				Math.sin(1.047197551196598D)));
-			ypos[1] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-				Math.sin(1.047197551196598D)));
-			ypos[2] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-				Math.sin(1.047197551196598D)));
-			ypos[3] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 2) * 
-				Math.sin(1.047197551196598D)));
-			ypos[4] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (1.5D * this.myBoardSize)) * 
-				Math.sin(1.047197551196598D)));
-			ypos[5] = 
-				((int)((this.myWidth * y / (2 * this.myBoardSize) + this.myWidth / (4 * this.myBoardSize) + this.myWallWidth / 4) * 
-				Math.sin(1.047197551196598D)));
-		} else {
-			ypos[0] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) + this.myWidth / (2 * this.myBoardSize) - this.myWallWidth / 1.5D) * 
-				Math.sin(1.047197551196598D)));
-			ypos[1] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-				Math.sin(1.047197551196598D)));
-			ypos[2] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-				Math.sin(1.047197551196598D)));
-			ypos[3] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (2 * this.myBoardSize) + this.myWallWidth / 2) * 
-				Math.sin(1.047197551196598D)));
-			ypos[4] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (1.5D * this.myBoardSize)) * 
-				Math.sin(1.047197551196598D)));
-			ypos[5] = 
-				((int)((this.myWidth * (y + 2) / (2 * this.myBoardSize) - this.myWidth / (4 * this.myBoardSize) - this.myWallWidth / 4) * 
-				Math.sin(1.047197551196598D)));
-		}
-		pen.fillPolygon(xpos, ypos, 6);
-	}
+		int[] xpos = new int[9];
+		int[] ypos = new int[9];
+		final int xpix = convertToPix(x + 1, 0);
+		int ypix = convertToPix(y + 2, -(y + 2) * this.myWallWidth / 3);
+		final int rCos60 = (int)(this.myRadius * Math.cos(Math.PI / 3));
+		final int rSin60 = (int)(this.myRadius * Math.sin(Math.PI / 3));
+		final int wSin60 = (int)(this.myWallWidth * Math.sin(Math.PI / 3)) / 2;
 
-	/**
-	 * Interpret a mouse location as a position on the board.
-	 */
-	/*public int pixToPos(int pix)
-	{
-		for (int i = 1; i <= 2 * this.myBoardSize - 1; i++) {
-			if ((pix > this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (pix <= this.myWidth * i / this.myBoardSize - this.myWallWidth / 2))
-				return i * 2 - 1;
-			if ((pix > this.myWidth * (i - 1) / this.myBoardSize - this.myWallWidth / 2) && (pix <= this.myWidth * (i - 1) / this.myBoardSize + this.myWallWidth / 2) && (i != 0))
-				return i * 2 - 2;
+		// Set all the x positions.
+		xpos[0] = xpix - this.myWallWidth / 2;
+		xpos[1] = xpix - this.myWallWidth / 2;
+		xpos[2] = xpix + this.myWallWidth / 2;
+		xpos[3] = xpix + this.myWallWidth / 2;
+		xpos[4] = xpix + this.myWallWidth / 2 + rSin60;
+		xpos[5] = xpix + rSin60;
+		xpos[6] = xpix;
+		xpos[7] = xpix - rSin60;
+		xpos[8] = xpix - this.myWallWidth / 2 - rSin60;
+
+		// Every other wall has to point down instead of up.
+		if (!isEven(x + y / 2))
+		{
+			ypos[0] = ypix - wSin60;
+			ypos[1] = ypix - wSin60 - this.myRadius;
+			ypos[2] = ypix - wSin60 - this.myRadius;
+			ypos[3] = ypix - wSin60;
+			ypos[4] = ypix + rCos60 - wSin60;
+			ypos[5] = ypix + rCos60 + wSin60;
+			ypos[6] = ypix + wSin60;
+			ypos[7] = ypix + rCos60 + wSin60;
+			ypos[8] = ypix + rCos60 - wSin60;
 		}
-		throw new IllegalArgumentException("Click somewhere ON the board.");
-	}*/
+
+		// Reverse the y coordinates so it points down.
+		else
+		{
+			ypix += this.myWallWidth + wSin60;
+			ypos[0] = ypix + wSin60;
+			ypos[1] = ypix + wSin60 + this.myRadius;
+			ypos[2] = ypix + wSin60 + this.myRadius;
+			ypos[3] = ypix + wSin60;
+			ypos[4] = ypix - rCos60 + wSin60;
+			ypos[5] = ypix - rCos60 - wSin60;
+			ypos[6] = ypix - wSin60;
+			ypos[7] = ypix - rCos60 - wSin60;
+			ypos[8] = ypix - rCos60 + wSin60;
+		}
+
+		pen.fillPolygon(xpos, ypos, 9);
+	}
 
 	private int pixToPos(final int pix)
 	{
@@ -395,7 +385,11 @@ public class BoardPanel extends JPanel
 	 */
 	public Point pixToWallPoint(final int x, final int y)
 	{
-		return new Point(pixToWallPos(x), pixToWallPos(y));
+		final int hexY = pixToPos(y + y / this.myWallWidth * 3) * 2 - 1;
+		if (this.myBoardType == "hexagonal")
+			return new Point(pixToPos(x * 2), hexY);
+		else
+			return new Point(pixToWallPos(x), pixToWallPos(y));
 	}
 
 	public Point pixToMovePoint(final int x, final int y)

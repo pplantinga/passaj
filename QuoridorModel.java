@@ -403,8 +403,12 @@ public class QuoridorModel
 		final int avgY = (destination.y + origin.y) / 2;
 		
 		// Which direction are we moving in?
-		final int Xdir = (destination.x - origin.x) / Xdist;
-		final int Ydir = (destination.y - origin.y) / Ydist;
+		int Xdir = 0;
+		int Ydir = 0;
+		if (Xdist != 0)
+			Xdir = (destination.x - origin.x) / Xdist;
+		if (Ydist != 0)
+			Ydir = (destination.y - origin.y) / Ydist;
 
 		// Normal move
 		if ((Xdist == 2 && Ydist == 0 || Xdist == 1 && Ydist == 2)
@@ -651,6 +655,7 @@ public class QuoridorModel
 		// Hex board walls cannot be immediately next to any other walls
 		if (this.myBoardType == "hexagonal")
 		{
+			// +1 when x + y is odd, -1 when x + y is even
 			final int yAdd = 2 * ((placement.x + placement.y) % 2) - 1;
 
 			if (this.myBoard[placement.x][placement.y] != 0

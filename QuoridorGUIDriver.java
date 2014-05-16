@@ -181,6 +181,7 @@ public class QuoridorGUIDriver extends JFrame
 		{
 			Point wall = this.myBoardPanel.pixToWallPoint(e.getX(), e.getY());
 			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
+			System.out.println(wall.x + " " + wall.y);
 
 			if (this.myModel.move(wall, o))
 				this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
@@ -236,7 +237,9 @@ public class QuoridorGUIDriver extends JFrame
 			int o = this.myBoardPanel.orientation(e.getX(), e.getY());
 
 			if (this.myModel.isLegalWall(tempWall, o))
+			{
 				this.myBoardPanel.setTempWall(tempWall, o);
+			}
 		}
 	}
 
