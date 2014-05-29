@@ -169,12 +169,13 @@ public class QuoridorModel
 		// TODO adjust pieces on even hex boards.
 		if (isEven(this.myBoardSize))
 		{
-			if (this.myBoardType != "hexagonal")
-			{
-				this.myLocations[0].x += 2;
+			this.myLocations[0].x -= 1;
+			this.myLocations[1].x += 1;
 
-				if (this.myPlayers == 4)
-					this.myLocations[2].y += 2;
+			if (this.myBoardType != "hexagonal" && this.myPlayers == 4)
+			{
+				this.myLocations[2].y -= 1;
+				this.myLocations[3].y += 1;
 			}
 		}
 	}
