@@ -157,17 +157,35 @@ public class QuoridorGUIDriver extends JFrame
 		Point[] locations = this.myModel.getLocations();
 		Point player = locations[this.myModel.getPlayer()];
 
-		boolean aimove = true;
-
 		if (this.myMode == "move")
 		{
 			if (this.myModel.move(move))
+			{
 				this.myBoardPanel.setLocations(locations);
 
-			this.myMode = "wall";
+				this.myMode = "wall";
 
-			// Erase temporary pieces
-			this.myBoardPanel.showMoves(new Point[0]);
+				// Erase temporary pieces
+				this.myBoardPanel.showMoves(new Point[0]);
+			}
+
+			// The user clicked on the player again, go back to wall mode
+			else if (move.x == player.x
+					&& move.y == player.y)
+			{
+				this.myMode = "wall";
+
+				// Erase temporary pieces
+				this.myBoardPanel.showMoves(new Point[0]);
+
+				return;
+			}
+
+			// TODO Illegal move, make some warning.
+			else
+			{
+				return;
+			}
 		}
 		else if (move.x == player.x
 			&& move.y == player.y)
@@ -175,7 +193,7 @@ public class QuoridorGUIDriver extends JFrame
 			this.myMode = "move";
 			Point[] legalMoves = this.myModel.legalMoves(player);
 			this.myBoardPanel.showMoves(legalMoves);
-			aimove = false;
+			return;
 		}
 		else
 		{
@@ -185,9 +203,11 @@ public class QuoridorGUIDriver extends JFrame
 
 			if (this.myModel.move(wall, o))
 				this.myBoardPanel.addWall(new int[] {wall.x, wall.y, o});
+			else
+				return;
 		}
 
-		if (this.myCompLevel != 0 && aimove)
+		if (this.myCompLevel != 0)
 		{
 			int[] themove = this.myModel.ai_move(this.myCompLevel * 1000);
 
