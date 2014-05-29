@@ -254,22 +254,22 @@ public class BoardPanel extends JPanel
 
 	private boolean isGoalRow(final Point p)
 	{
-		final int half = (this.myBoardSize - 1) / 2;
+		final int half = this.myBoardSize - 1;
 
 		// Top and bottom row are always goal rows
-		if (p.y == 0 || p.y == half * 2)
+		if (p.y == 0 || p.y == half)
 			return true;
 
 		// Always call the border of the hex board a goal row
 		if (this.myBoardType == "hexagonal")
-			return p.x + p.y == half
-				|| p.y - p.x == half
-				|| p.x + p.y == 5 * half
-				|| p.x - p.y == 3 * half;
+			return p.x + p.y == half / 2
+				|| p.y - p.x == half / 2
+				|| p.x + p.y == 5 * half / 2
+				|| p.x - p.y == 3 * half / 2;
 
 		// Only call the sides of the board a goal row when there's 4 people
 		else if (this.myPlayerCount == 4)
-			return p.x == 0 || p.x == half * 2;
+			return p.x == 0 || p.x == half;
 
 		else
 			return false;
@@ -280,13 +280,13 @@ public class BoardPanel extends JPanel
 		if (isEven(p.x) && !isEven(p.y) || !isEven(p.x) && isEven(p.y))
 			return false;
 
-		final int half = (this.myBoardSize - 1) / 2;
+		final int half = this.myBoardSize - 1;
 		return p.y >= 0
-			&& p.y <= half * 2
-			&& p.x + p.y >= half
-			&& p.y - p.x <= half 
-			&& p.x - p.y <= 3 * half
-			&& p.x + p.y <= 5 * half;
+			&& p.y <= half
+			&& p.x + p.y >= half / 2
+			&& p.y - p.x <= half / 2
+			&& p.x - p.y <= 3 * half / 2
+			&& p.x + p.y <= 5 * half / 2;
 	}
 
 	public void paintHexPieces(Graphics pen)
