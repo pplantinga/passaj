@@ -552,7 +552,7 @@ public class QuoridorModel
 		{
 			if (wallsInPath[i][linearize(placement.x, placement.y, o)])
 			{
-				testLengths[i] = pathLength(0);
+				testLengths[i] = pathLength(i);
 
 				if (testLengths[i] == 0)
 				{
