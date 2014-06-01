@@ -78,6 +78,7 @@ public class RuleGUIDriver extends JFrame
 	{
 		RuleGUIDriver rules = new RuleGUIDriver();
 		rules.pack();
+		rules.setLocationRelativeTo(null);
 		rules.setVisible(true);
 	}
 

@@ -115,6 +115,7 @@ public class QuoridorGUIDriver extends JFrame
 	{
 		QuoridorGUIDriver pass = new QuoridorGUIDriver();
 		pass.pack();
+		pass.setLocationRelativeTo(null);
 		pass.setVisible(true);
 	}
 
@@ -128,6 +129,7 @@ public class QuoridorGUIDriver extends JFrame
 		{
 			InputGUIDriver input = new InputGUIDriver(myNames, myColors, myType, myBoardSize, myCompLevel);
 			input.pack();
+			input.setLocationRelativeTo(null);
 			input.setVisible(true);
 			setVisible(false);
 		}
@@ -138,6 +140,7 @@ public class QuoridorGUIDriver extends JFrame
 			RuleGUIDriver rule = new RuleGUIDriver(this);
 
 			rule.pack();
+			rule.setLocationRelativeTo(null);
 			rule.setVisible(true);
 			this.setVisible(false);
 		}

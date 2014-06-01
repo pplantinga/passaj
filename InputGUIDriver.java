@@ -357,6 +357,7 @@ public class InputGUIDriver extends JFrame
 			// Initialize the game
 			QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.myType, this.boardSizeSlider.getValue(), this.myCompLevel);
 			pass.pack();
+			pass.setLocationRelativeTo(null);
 			pass.setVisible(true);
 
 			// Hide the input GUI
@@ -390,6 +391,7 @@ public class InputGUIDriver extends JFrame
 	{
 		InputGUIDriver input = new InputGUIDriver();
 		input.pack();
+		input.setLocationRelativeTo(null);
 		input.setVisible(true);
 	}
 }
