@@ -9,7 +9,9 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
+import javax.swing.JSlider;
 import javax.swing.JTextField;
+import javax.swing.SwingConstants;
 
 /**
  * This class operates a gui window for choosing game options.
@@ -18,6 +20,9 @@ public class InputGUIDriver extends JFrame
 	implements ActionListener
 {
 	private static final long serialVersionUID = 1234567890123456789L;
+	private static final int MIN_BOARD_SIZE = 3;
+	private static final int MAX_BOARD_SIZE = 15;
+	private static final int DEFAULT_BOARD_SIZE = 9;
 	private JButton theBigRedButton;
 	private JButton theBigBlueButton;
 	private JButton hexButton;
@@ -25,7 +30,7 @@ public class InputGUIDriver extends JFrame
 	private JLabel sizelabel;
 	private JLabel playerNumberlabel;
 	private JLabel compLevellabel;
-	private JTextField sizefield;
+	private JSlider boardSizeSlider;
 	private JRadioButton[] myPlay = new JRadioButton[5];
 	private JRadioButton[] myCompLevels = new JRadioButton[5];
 	private JLabel[] playerColorLabels = new JLabel[12];
@@ -52,7 +57,6 @@ public class InputGUIDriver extends JFrame
 	public InputGUIDriver()
 	{
 		initialize();
-		this.sizefield.setText("9");
 	}
 
 	/**
@@ -89,7 +93,7 @@ public class InputGUIDriver extends JFrame
 			this.myType = "hexagonal";
 		}
 
-		this.sizefield.setText(Integer.toString(size));
+		this.boardSizeSlider.setValue(size);
 
 		// Enable as many fields as there are players
 		for (int i = 0; i < 12; i++)
@@ -116,7 +120,7 @@ public class InputGUIDriver extends JFrame
 		setTitle("Opening Screen");
 
 		// Player labels
-		this.playerNumberlabel = new JLabel("Number of players: ");
+		this.playerNumberlabel = new JLabel("Number of players: ", SwingConstants.RIGHT);
 		for (int i = 0; i < 12; i++)
 		{
 			int player = i / 2 + 1;
@@ -124,7 +128,7 @@ public class InputGUIDriver extends JFrame
 			if (i % 2 == 1)
 				label = "Enter Player " + player + " color:";
 
-			this.playerColorLabels[i] = new JLabel(label);
+			this.playerColorLabels[i] = new JLabel(label, SwingConstants.RIGHT);
 		}
 
 		this.playersPanel = new JPanel();
@@ -149,7 +153,7 @@ public class InputGUIDriver extends JFrame
 		}
 
 		// Computer level chooser
-		this.compLevellabel = new JLabel("Enter the level of the computer");
+		this.compLevellabel = new JLabel("Computer level: ", SwingConstants.RIGHT);
 		this.compPanel = new JPanel();
 		this.compPanel.setLayout(new GridLayout(1, 5));
 		for (int i = 0; i <= 4; i++)
@@ -175,9 +179,14 @@ public class InputGUIDriver extends JFrame
 		this.playerColorFields[0].setText(this.playerColors[0]);
 		this.playerColorFields[1].setText(this.playerColors[1]);
 
-		this.sizelabel = new JLabel("Enter Size of Board: ");
-		this.sizefield = new JTextField(2);
-		this.sizefield.addActionListener(this);
+		this.sizelabel = new JLabel("Enter size of board: ", SwingConstants.RIGHT);
+		this.boardSizeSlider = new JSlider(
+			MIN_BOARD_SIZE,
+			MAX_BOARD_SIZE,
+			DEFAULT_BOARD_SIZE
+		);
+		this.boardSizeSlider.setMajorTickSpacing(3);
+		this.boardSizeSlider.setPaintLabels(true);
 
 		// Initialize buttons
 		this.regButton = new JButton("Regular Board");
@@ -198,7 +207,7 @@ public class InputGUIDriver extends JFrame
 		this.theBigBlueButton.setFocusable(false);
 
 		// Layout all the parts
-		setLayout(new GridLayout(17, 2));
+		setLayout(new GridLayout(17, 2, 5, 2));
 		add(this.regButton);
 		add(this.hexButton);
 		add(this.playerNumberlabel);
@@ -211,7 +220,7 @@ public class InputGUIDriver extends JFrame
 			add(this.playerColorFields[i]);
 		}
 		add(this.sizelabel);
-		add(this.sizefield);
+		add(this.boardSizeSlider);
 		add(this.theBigRedButton);
 		add(this.theBigBlueButton);
 		setDefaultCloseOperation(3);
@@ -329,9 +338,6 @@ public class InputGUIDriver extends JFrame
 					this.playerColorFields[i].setText(this.playerColors[i]);
 			}
 
-			if (this.sizefield.getText().equals(""))
-				this.sizefield.setText("9");
-
 			// If we're playing against the computer, give it a color and name
 			if (this.myPlayers == 1)
 				this.myPlayers = 2;
@@ -344,15 +350,12 @@ public class InputGUIDriver extends JFrame
 				colors[i / 2] = this.playerColorFields[i + 1].getText();
 			}
 
-			// Parse size of board
-			int size = Integer.parseInt(this.sizefield.getText());
-
 			// Use 0 for complevel if we're not using a computer
 			if (!this.compEnabled)
 				this.myCompLevel = 0;
 
 			// Initialize the game
-			QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.myType, size, this.myCompLevel);
+			QuoridorGUIDriver pass = new QuoridorGUIDriver(names, colors, this.myType, this.boardSizeSlider.getValue(), this.myCompLevel);
 			pass.pack();
 			pass.setVisible(true);
 
